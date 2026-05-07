@@ -1,0 +1,5 @@
+user_id_int	target_id	rating	timestamp	seq_ids	raw_user_id	raw_parent_asin
+1	1	5.0	1000		u_demo_1	item_demo_a
+1	2	4.0	2000	1	u_demo_1	item_demo_b
+2	3	5.0	1100		u_demo_2	item_demo_c
+2	4	4.0	2100	3	u_demo_2	item_demo_d

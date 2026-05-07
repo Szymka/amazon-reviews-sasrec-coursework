@@ -1,0 +1,50 @@
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment files
+.env
+.env.*
+
+# Large raw and processed data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.csv.gz
+*.jsonl.gz
+*.json.gz
+*.part
+
+# Archives and ad-hoc local data exports
+*.zip
+*.tar
+*.tar.gz
+*.parquet
+
+# Model checkpoints and training artifacts
+checkpoints/
+checkpoint/
+*.pt
+*.pth
+*.ckpt
+*.bin
+runs/
+wandb/
+logs/
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Keep tiny examples trackable
+!examples/tiny_sample/**

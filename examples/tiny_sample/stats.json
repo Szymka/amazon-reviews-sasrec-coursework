@@ -1,0 +1,19 @@
+{
+  "category": "Tiny_Sample",
+  "max_users": 2,
+  "num_users": 2,
+  "num_items": 8,
+  "num_train_rows": 4,
+  "num_dev_rows": 2,
+  "num_test_rows": 2,
+  "num_sasrec_sequences": 2,
+  "num_sasrec_interactions": 8,
+  "min_sequence_length": 4,
+  "max_sequence_length": 4,
+  "avg_sequence_length": 4.0,
+  "source_train_file": "examples/tiny_sample/train.tsv",
+  "source_valid_file": "examples/tiny_sample/dev.tsv",
+  "source_test_file": "examples/tiny_sample/test.tsv",
+  "id_start_from": 1,
+  "padding_id": 0
+}

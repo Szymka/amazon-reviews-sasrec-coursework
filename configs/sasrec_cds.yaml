@@ -1,0 +1,20 @@
+category: CDs_and_Vinyl
+processed_dir: data/processed/CDs_and_Vinyl
+train_file: data/processed/CDs_and_Vinyl/train.tsv
+dev_file: data/processed/CDs_and_Vinyl/dev.tsv
+test_file: data/processed/CDs_and_Vinyl/test.tsv
+sequence_file: data/processed/CDs_and_Vinyl/sasrec_sequence.txt
+interactions_file: data/processed/CDs_and_Vinyl/sasrec_interactions.txt
+stats_file: data/processed/CDs_and_Vinyl/stats.json
+
+model_name: SASRec
+maxlen: 50
+hidden_units: 64
+num_blocks: 2
+num_heads: 2
+dropout_rate: 0.2
+learning_rate: 0.001
+batch_size: 128
+num_epochs: 100
+topk: 10
+seed: 42

@@ -5,8 +5,17 @@
 建议后续新增：
 
 ```text
+train/check_data_loading.py
 train/train_sasrec.py
 ```
+
+当前已添加：
+
+```powershell
+python train/check_data_loading.py --config configs/sasrec_industrial.yaml
+```
+
+该脚本用于在训练前检查 processed 数据是否能被正确读取，并验证 `maxlen`、padding 和 train/dev/test 划分。
 
 基本调用形式建议为：
 

@@ -96,7 +96,7 @@ python scripts/check_processed_data.py --categories Industrial_and_Scientific Mu
 Windows PowerShell 如果找不到 `python`，使用：
 
 ```powershell
-$env:PYTHONIOENCODING='utf-8'; & "C:\Users\Chess\AppData\Local\Programs\Python\Python312\python.exe" scripts/check_processed_data.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl
+$env:PYTHONIOENCODING='utf-8'; & "C:\Path\To\Your\Python\python.exe" scripts/check_processed_data.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl
 ```
 
 ## 注意

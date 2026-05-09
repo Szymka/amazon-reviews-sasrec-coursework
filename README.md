@@ -53,10 +53,10 @@ Install dependencies:
 python -m pip install -r requirements.txt
 ```
 
-If `python` is not on PATH in PowerShell, use the known local interpreter path:
+If `python` is not on PATH in PowerShell, use your local interpreter path:
 
 ```powershell
-$env:PYTHONIOENCODING='utf-8'; & "C:\Users\Chess\AppData\Local\Programs\Python\Python312\python.exe" scripts/check_raw_data.py --help
+$env:PYTHONIOENCODING='utf-8'; & "C:\Path\To\Your\Python\python.exe" scripts/check_raw_data.py --help
 ```
 
 Place raw files under:
@@ -112,6 +112,50 @@ Training code should read from `data/processed/<category>/`:
 - `stats.json`
 
 The complete raw and processed data should be obtained locally by each member or shared through a private file-sharing channel. Do not upload full data to GitHub.
+
+## Model Training
+
+### Training Commands
+
+```powershell
+# Train Industrial_and_Scientific
+python -m train.train_sasrec --config configs/sasrec_industrial.yaml
+
+# Train Musical_Instruments
+python -m train.train_sasrec --config configs/sasrec_musical.yaml
+
+# Train CDs_and_Vinyl
+python -m train.train_sasrec --config configs/sasrec_cds.yaml
+```
+
+### Hyperparameters
+
+Key hyperparameters to tune in `configs/*.yaml`:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `maxlen` | Maximum sequence length | 50 |
+| `hidden_units` | Embedding dimension | 64 |
+| `num_blocks` | Number of Transformer blocks | 2 |
+| `num_heads` | Number of attention heads | 2 |
+| `dropout_rate` | Dropout rate | 0.2 |
+| `learning_rate` | Learning rate | 0.001 |
+| `batch_size` | Batch size | 128 |
+| `num_epochs` | Number of epochs | 100 |
+| `early_stop_patience` | Early stopping patience | 5 |
+
+### Evaluation Metrics
+
+Training monitors the following metrics:
+- **NDCG@10** - Normalized Discounted Cumulative Gain (primary metric)
+- **HitRate@10** - Hit rate
+- **MRR@10** - Mean Reciprocal Rank
+
+### Output Files
+
+After training:
+- `train/sasrec_{category}_best.pth` - Best model checkpoint
+- `train/sasrec_{category}_test_results.json` - Test results
 
 ## Documentation
 

@@ -18,3 +18,6 @@ batch_size: 128
 num_epochs: 100
 topk: 10
 seed: 42
+
+early_stop_patience: 5
+early_stop_min_delta: 0.0

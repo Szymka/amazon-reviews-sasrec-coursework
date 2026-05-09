@@ -65,7 +65,7 @@ python scripts/check_raw_data.py
 Windows PowerShell 如果找不到 `python`，可使用本机绝对路径：
 
 ```powershell
-$env:PYTHONIOENCODING='utf-8'; & "C:\Users\Chess\AppData\Local\Programs\Python\Python312\python.exe" scripts/check_raw_data.py
+$env:PYTHONIOENCODING='utf-8'; & "C:\Path\To\Your\Python\python.exe" scripts/check_raw_data.py
 ```
 
 该脚本只读取少量样本行，不下载数据，不执行预处理。

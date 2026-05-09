@@ -64,7 +64,7 @@ def parse_seq_ids(value: object) -> list[int]:
     text = str(value).strip()
     if not text:
         return []
-    return [int(part) for part in text.split()]
+    return [int(float(part)) for part in text.split()]
 
 
 def pad_history(sequence: list[int], maxlen: int, padding_id: int = 0) -> list[int]:

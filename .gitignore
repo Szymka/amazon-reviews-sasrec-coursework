@@ -45,7 +45,7 @@ logs/
 train/*.pth
 train/*.pt
 train/*.ckpt
-train/*.json
+train/*_config.json
 train/*.log
 evaluation/*.pth
 evaluation/*.pt

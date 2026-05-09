@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 
 from evaluation.metrics import evaluate
-from models.sasrec.dataset import DEFAULT_CATEGORIES, build_category_datasets
+from models.seqrec.dataset import DEFAULT_CATEGORIES, build_category_datasets
 
 
 class SASRecDataset(torch.utils.data.Dataset):
@@ -92,7 +92,7 @@ def main() -> int:
         num_workers=0
     )
     
-    from models.sasrec.model import SASRec
+    from models.seqrec.model import SASRec
     model = SASRec(
         num_items=num_items,
         maxlen=args.maxlen,

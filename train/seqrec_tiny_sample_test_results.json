@@ -1,0 +1,24 @@
+{
+  "category": "tiny_sample",
+  "best_epoch": 1,
+  "test_loss": 38.58216857910156,
+  "test_metrics": {
+    "hit_rate": 1.0,
+    "ndcg": 0.34477025990312726,
+    "recall": 1.0,
+    "mrr": 0.15476190476190477,
+    "precision": 0.1111111111111111
+  },
+  "hyperparameters": {
+    "maxlen": 10,
+    "hidden_units": 64,
+    "num_blocks": 2,
+    "num_heads": 2,
+    "dropout_rate": 0.2,
+    "learning_rate": 0.001,
+    "batch_size": 2,
+    "num_epochs": 2,
+    "topk": 10,
+    "seed": 42
+  }
+}

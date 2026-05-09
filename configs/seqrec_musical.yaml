@@ -3,8 +3,8 @@ processed_dir: data/processed/Musical_Instruments
 train_file: data/processed/Musical_Instruments/train.tsv
 dev_file: data/processed/Musical_Instruments/dev.tsv
 test_file: data/processed/Musical_Instruments/test.tsv
-sequence_file: data/processed/Musical_Instruments/sasrec_sequence.txt
-interactions_file: data/processed/Musical_Instruments/sasrec_interactions.txt
+sequence_file: data/processed/Musical_Instruments/seqrec_sequence.txt
+interactions_file: data/processed/Musical_Instruments/seqrec_interactions.txt
 stats_file: data/processed/Musical_Instruments/stats.json
 
 model_name: SASRec

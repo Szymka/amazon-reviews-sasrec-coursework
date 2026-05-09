@@ -11,13 +11,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
-from models.sasrec.dataset import (
+from models.seqrec.dataset import (
     DEFAULT_CATEGORIES,
     build_category_datasets,
     load_simple_yaml,
 )
 from evaluation.metrics import evaluate
-from models.sasrec.model import SASRec
+from models.seqrec.model import SASRec
 
 
 class SASRecDataset(Dataset):
@@ -281,11 +281,11 @@ def main() -> int:
             best_epoch = epoch + 1
             early_stop_count = 0
             
-            model_path = args.save_dir / f'sasrec_{args.category}_best.pth'
+            model_path = args.save_dir / f'seqrec_{args.category}_best.pth'
             torch.save(model.state_dict(), model_path)
             print(f"  Best model saved to {model_path}")
             
-            config_path = args.save_dir / f'sasrec_{args.category}_best_config.json'
+            config_path = args.save_dir / f'seqrec_{args.category}_best_config.json'
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump({
                     'category': args.category,
@@ -309,7 +309,7 @@ def main() -> int:
                 break
     
     print(f"\nLoading best model from epoch {best_epoch}")
-    best_model_path = args.save_dir / f'sasrec_{args.category}_best.pth'
+    best_model_path = args.save_dir / f'seqrec_{args.category}_best.pth'
     model.load_state_dict(torch.load(best_model_path))
     model.eval()
     
@@ -364,14 +364,14 @@ def main() -> int:
         }
     }
     
-    results_path = args.save_dir / f'sasrec_{args.category}_test_results.json'
+    results_path = args.save_dir / f'seqrec_{args.category}_test_results.json'
     with open(results_path, 'w', encoding='utf-8') as f:
         json.dump(results_data, f, indent=2)
     print(f"\nResults saved to {results_path}")
     
     results_tables_dir = Path('results/tables')
     results_tables_dir.mkdir(parents=True, exist_ok=True)
-    tables_path = results_tables_dir / f'sasrec_{args.category}_test_results.json'
+    tables_path = results_tables_dir / f'seqrec_{args.category}_test_results.json'
     with open(tables_path, 'w', encoding='utf-8') as f:
         json.dump(results_data, f, indent=2)
     print(f"Results also saved to {tables_path}")

@@ -5,10 +5,10 @@ from pathlib import Path
 
 import torch
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models.sasrec.dataset import build_category_datasets
-from models.sasrec.model import SASRec
+from models.seqrec.dataset import build_category_datasets
+from models.seqrec.model import SASRec
 from evaluation.metrics import evaluate, ndcg_at_k, hit_rate_at_k
 
 
@@ -110,9 +110,10 @@ def test_config_loading():
     print("=" * 60)
     
     try:
-        from models.sasrec.dataset import load_simple_yaml
+        from models.seqrec.dataset import load_simple_yaml
         
-        config = load_simple_yaml("configs/sasrec_industrial.yaml")
+        config_path = Path(__file__).parent.parent / "configs" / "seqrec_industrial.yaml"
+        config = load_simple_yaml(str(config_path))
         
         print(f"✓ 配置文件加载成功")
         print(f"  - category: {config.get('category')}")

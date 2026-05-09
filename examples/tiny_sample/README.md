@@ -7,8 +7,8 @@
 - `train.tsv`
 - `dev.tsv`
 - `test.tsv`
-- `sasrec_sequence.txt`
-- `sasrec_interactions.txt`
+- `seqrec_sequence.txt`
+- `seqrec_interactions.txt`
 - `user2id.json`
 - `id2user.json`
 - `item2id.json`

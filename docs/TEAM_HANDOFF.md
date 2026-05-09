@@ -1,82 +1,215 @@
 # Team Handoff
 
-本文档是当前数据预处理工作的交接说明，供模型训练、评估和报告撰写同学继续使用。
+本文档是项目交接说明，记录已完成工作、项目状态和后续任务安排。
 
-## 已完成工作
+---
 
-已完成以下部分：
+## 📋 项目状态概览
 
-- 下载 Amazon Reviews 2023 5-Core 三个类别数据。
-- 检查三个类别 raw 数据目录、15 个 raw 文件、CSV 字段和 JSONL 可读性。
-- 编写并完善 `scripts/check_raw_data.py`。
-- 编写并完善 `scripts/preprocess_to_sasrec.py`。
-- 将三个类别转换为 SASRec 可用的 processed 数据。
-- 编写并完善 `scripts/check_processed_data.py`。
-- 三个类别 processed 输出均已通过检查。
+| 阶段               | 状态      | 负责人      | 截止时间 |
+| ------------------ | --------- | ----------- | -------- |
+| 数据预处理         | ✅ 已完成 | -           | 已完成   |
+| 模型配置与训练脚本 | ✅ 已完成 | -           | 已完成   |
+| 训练与调优         | 📋 待进行 | 训练同学    | 待定     |
+| 评估与结果分析     | 📋 待进行 | 评估同学    | 待定     |
+| 报告撰写           | 📋 待进行 | 报告同学A/B | 5月18日  |
 
-## 已处理类别
+---
 
-- `Industrial_and_Scientific`
-- `Musical_Instruments`
-- `CDs_and_Vinyl`
+## ✅ 已完成工作
 
-## processed 输出文件
+### 1. 数据预处理
+
+- ✅ **下载数据**：下载 Amazon Reviews 2023 5-Core 三个类别数据
+- ✅ **数据检查**：检查 raw 数据目录、文件完整性、CSV 字段和 JSONL 可读性
+- ✅ **编写检查脚本**：`scripts/check_raw_data.py`、`scripts/check_processed_data.py`
+- ✅ **数据划分**：按大作业要求划分数据集
+  - 训练集：前 N-2 个交互
+  - 验证集：第 N-1 个交互
+  - 测试集：第 N 个交互（最后一个）
+- ✅ **格式转换**：将数据转换为 SASRec 所需格式
+
+### 2. 数据加载验证
+
+- ✅ **多类别支持**：修改数据加载部分，支持读取三个类别数据
+- ✅ **参数调整**：调整序列长度 `maxlen`、padding 等参数
+- ✅ **划分一致性**：确保训练/验证/测试划分与作业要求一致
+
+### 3. 模型配置与训练脚本
+
+- ✅ **超参数配置**：支持调整嵌入维度、注意力头数、dropout 率等
+- ✅ **多数据集切换**：通过 `--config` 参数支持切换不同类别
+- ✅ **早停机制**：监控验证集 NDCG@10，连续无提升时自动停止
+- ✅ **模型保存**：自动保存最佳模型到 `train/seqrec_{category}_best.pth`
+- ✅ **NDCG@10 评估**：添加评估函数，计算 HitRate@10、NDCG@10、Recall@10、MRR@10、Precision@10
+
+---
+
+## 📊 已处理类别与统计
+
+### 三个类别
+
+1. **Industrial_and_Scientific**
+2. **Musical_Instruments**
+3. **CDs_and_Vinyl**
+
+### 数据集统计
+
+| category                  | users   | items  | train_rows | dev_rows | test_rows | avg_seq_len |
+| ------------------------- | ------- | ------ | ---------- | -------- | --------- | ----------- |
+| Industrial_and_Scientific | 50,985  | 25,848 | 310,977    | 50,985   | 50,985    | 8.10        |
+| Musical_Instruments       | 57,439  | 24,587 | 396,958    | 57,439   | 57,439    | 8.91        |
+| CDs_and_Vinyl             | 123,876 | 89,370 | 1,305,012  | 123,876  | 123,876   | 12.53       |
+
+### processed 输出文件
 
 每个类别目录 `data/processed/<category>/` 下都有：
 
 ```text
-train.tsv
-dev.tsv
-test.tsv
-sasrec_sequence.txt
-sasrec_interactions.txt
-user2id.json
-id2user.json
-item2id.json
-id2item.json
-stats.json
+train.tsv          # 训练集
+dev.tsv            # 验证集
+test.tsv           # 测试集
+seqrec_sequence.txt # SASRec格式序列
+seqrec_interactions.txt # 交互数据
+user2id.json       # 用户ID映射
+id2user.json       # 用户ID反向映射
+item2id.json       # 商品ID映射
+id2item.json       # 商品ID反向映射
+stats.json         # 统计信息
 ```
 
-## 核心统计
+---
 
-| category | users | items | train_rows | dev_rows | test_rows | sasrec_sequences | sasrec_interactions | min_seq | max_seq | avg_seq |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Industrial_and_Scientific | 50985 | 25848 | 310977 | 50985 | 50985 | 50985 | 412947 | 5 | 204 | 8.099382 |
-| Musical_Instruments | 57439 | 24587 | 396958 | 57439 | 57439 | 57439 | 511836 | 5 | 288 | 8.910949 |
-| CDs_and_Vinyl | 123876 | 89370 | 1305012 | 123876 | 123876 | 123876 | 1552764 | 5 | 1912 | 12.534825 |
+## 🚀 后续工作
 
-三个类别的 `dev.tsv` 均来自 raw 阶段的 `<category>.valid.csv.gz`。
+### 4. 训练与调优（1人）
 
-## 后续接手方式
+#### 任务清单
 
-模型训练同学：
+| 任务 | 说明                                                                       |
+| ---- | -------------------------------------------------------------------------- |
+| 4.①  | 在三个类别上运行训练脚本，调节关键超参数（maxlen、dropout_rate、学习率等） |
+| 4.②  | 使用验证集监控 NDCG@10，记录实验配置和结果                                 |
+| 4.③  | 确定每个类别最优超参数，固定随机种子                                       |
+| 4.④  | 输出最终模型检查点                                                         |
 
-- 从 `data/processed/<category>/` 读取数据。
-- 优先使用 `sasrec_sequence.txt` 或 `train.tsv/dev.tsv/test.tsv`。
-- 使用 `configs/` 中的 YAML 作为起始配置。
-- 不要写死本机绝对路径。
-- 不要把 checkpoint 提交到 GitHub。
+#### 训练命令
 
-评估同学：
+```powershell
+# 训练单个类别
+python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
+python -m train.train_seqrec --config configs/seqrec_musical.yaml --device cuda
+python -m train.train_seqrec --config configs/seqrec_cds.yaml --device cuda
+```
 
-- 从 `test.tsv` 和模型输出计算 `HitRate@10`、`NDCG@10`、`Recall@10`。
-- 将最终表格放入 `results/tables/`。
-- 将图表放入 `results/figures/`。
-- 三个类别分别汇报结果。
+#### 超参数搜索范围建议
 
-报告同学：
+| 参数            | 默认值 | 建议搜索范围        |
+| --------------- | ------ | ------------------- |
+| `maxlen`        | 50     | 30, 50, 100         |
+| `hidden_units`  | 64     | 64, 128, 256        |
+| `num_heads`     | 2      | 2, 4, 8             |
+| `dropout_rate`  | 0.2    | 0.1, 0.2, 0.3       |
+| `learning_rate` | 0.001  | 0.0001, 0.001, 0.01 |
+| `batch_size`    | 128    | 64, 128, 256        |
+| `seed`          | 42     | 42, 123, 2024       |
 
-- 数据来源、划分逻辑和输出格式可引用 `docs/DATA_PREPROCESS.md`。
-- 类别规模和序列长度可引用各类别的 `stats.json` 或上方统计表。
-- 报告中明确 raw 阶段 `valid.csv.gz` 对应 processed 阶段 `dev.tsv`。
+#### 实验记录模板
 
-## GitHub 注意事项
+| 实验ID | 类别       | maxlen | hidden_units | dropout_rate | lr    | batch_size | Dev NDCG@10 | Test NDCG@10 |
+| ------ | ---------- | ------ | ------------ | ------------ | ----- | ---------- | ----------- | ------------ |
+| EXP001 | Industrial | 50     | 64           | 0.2          | 0.001 | 128        |             |              |
+| EXP002 | Industrial | 50     | 128          | 0.2          | 0.001 | 128        |             |              |
 
-不要把以下目录中的完整数据上传到 GitHub：
+### 5. 评估与结果分析（1人）
+
+#### 任务清单
+
+| 任务 | 说明                                                  |
+| ---- | ----------------------------------------------------- |
+| 5.①  | 用最优模型跑测试集，输出 Top-10 预测                  |
+| 5.②  | 计算三个类别的 NDCG@10 等评估结果                     |
+| 5.③  | 生成图表：训练损失曲线、NDCG 收敛曲线、注意力可视化等 |
+| 5.④  | 确保结果可复现（记录所有参数和种子）                  |
+
+#### 评估指标
+
+- **核心指标**：NDCG@10（归一化折损累积增益）
+- **辅助指标**：HitRate@10、Recall@10、MRR@10、Precision@10
+
+#### 结果保存位置
 
 ```text
-data/raw/
-data/processed/
+results/tables/     # 表格结果（JSON/CSV）
+results/figures/    # 图表结果（PNG/PDF）
 ```
 
-这些目录只在本地保留完整数据；仓库中只提交 `.gitkeep` 占位文件。
+### 6. 报告撰写A（方法+实验部分）（1人）
+
+#### 任务清单
+
+| 任务 | 说明                                                              |
+| ---- | ----------------------------------------------------------------- |
+| 6.①  | 撰写问题定义、数据集描述、数据划分方法                            |
+| 6.②  | 详细描述 SASRec 模型结构（嵌入、自注意力、掩码、FFN等，引用论文） |
+| 6.③  | 实验设置（超参数表格、训练细节、硬件环境）                        |
+| 6.④  | 实验结果分析（三个类别 NDCG@10 表格）                             |
+| 6.⑤  | 参考文献引用                                                      |
+
+### 7. 报告撰写B（引言+分工+可重复性+可视化）（1人）
+
+#### 任务清单
+
+| 任务 | 说明                                                              |
+| ---- | ----------------------------------------------------------------- |
+| 7.①  | 撰写引言（背景、研究意义）                                        |
+| 7.②  | 撰写团队分工说明（表格形式列出每人职责）                          |
+| 7.③  | 撰写可重复性说明（运行环境、依赖、步骤、随机种子）                |
+| 7.④  | 使用 Python 或 Excel 制作图表（从评估人员处取数据图表）           |
+| 7.⑤  | 检查报告格式统一、引用规范、错别字                                |
+| 7.⑥  | 汇总源代码、可执行结果、报告，打包为 `推荐系统-组号-组长姓名.zip` |
+| 7.⑦  | **5月18日**前发送至指定邮箱并确认助教收到                         |
+
+---
+
+## 📁 文件结构说明
+
+| 目录                    | 说明                       |
+| ----------------------- | -------------------------- |
+| `scripts/`              | 数据下载、检查、预处理脚本 |
+| `configs/`              | SASRec 实验配置文件        |
+| `models/seqrec/`        | SASRec 模型实现            |
+| `train/`                | 训练脚本和模型检查点       |
+| `evaluation/`           | 评估指标和评估脚本         |
+| `results/tables/`       | 结果表格                   |
+| `results/figures/`      | 结果图表                   |
+| `examples/tiny_sample/` | 示例数据（用于测试）       |
+| `data/raw/`             | 原始数据（本地）           |
+| `data/processed/`       | 处理后数据（本地）         |
+
+---
+
+## ⚠️ GitHub 注意事项
+
+### 不要上传的文件
+
+- ❌ 模型检查点（`.pth`、`.pt`、`.ckpt` 文件）
+- ❌ 训练日志（`*.log`、`logs/`、`runs/`、`wandb/`）
+- ❌ 完整原始数据（`data/raw/*`）
+- ❌ 完整处理数据（`data/processed/*`）
+
+### 应该上传的文件
+
+- ✅ 代码文件（`.py`）
+- ✅ 配置文件（`.yaml`）
+- ✅ 文档（`.md`）
+- ✅ 示例数据（`examples/tiny_sample/`）
+- ✅ 轻量结果（`results/tables/*.json`）
+
+### 检查 `.gitignore`
+
+确保 `.gitignore` 已正确配置，排除大文件和敏感文件。
+
+---
+
+_最后更新：2026年5月9日_

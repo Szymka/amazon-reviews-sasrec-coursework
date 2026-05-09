@@ -38,7 +38,7 @@ git status --short
 
 ```text
 docs: update data preprocessing guide
-feat: add sasrec training script
+feat: add seqrec training script
 fix: correct ndcg calculation
 chore: update gitignore
 ```

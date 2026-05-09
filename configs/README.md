@@ -4,8 +4,8 @@
 
 配置文件：
 
-- `sasrec_industrial.yaml`
-- `sasrec_musical.yaml`
-- `sasrec_cds.yaml`
+- `seqrec_industrial.yaml`
+- `seqrec_musical.yaml`
+- `seqrec_cds.yaml`
 
 训练同学可以调整 `maxlen`、`hidden_units`、`num_blocks`、`dropout_rate`、`learning_rate`、`batch_size`、`num_epochs` 等参数，但应保留相对路径，避免写死本机路径。

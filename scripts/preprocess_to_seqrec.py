@@ -114,8 +114,8 @@ def output_paths(processed_dir: Path, category: str) -> dict[str, Path]:
     paths = {split: category_dir / file_name for split, file_name in OUTPUT_SPLITS.items()}
     paths.update(
         {
-            "sasrec_sequence": category_dir / "sasrec_sequence.txt",
-            "sasrec_interactions": category_dir / "sasrec_interactions.txt",
+            "seqrec_sequence": category_dir / "seqrec_sequence.txt",
+            "seqrec_interactions": category_dir / "seqrec_interactions.txt",
             "user_mapping": category_dir / "user2id.json",
             "id_to_user_mapping": category_dir / "id2user.json",
             "item_mapping": category_dir / "item2id.json",
@@ -279,8 +279,8 @@ def build_stats(
         "num_train_rows": int(len(tsv_frames["train"])),
         "num_dev_rows": int(len(tsv_frames["valid"])),
         "num_test_rows": int(len(tsv_frames["test"])),
-        "num_sasrec_sequences": len(sequences),
-        "num_sasrec_interactions": interaction_count,
+        "num_seqrec_sequences": len(sequences),
+        "num_seqrec_interactions": interaction_count,
         "min_sequence_length": min(sequence_lengths) if sequence_lengths else 0,
         "max_sequence_length": max(sequence_lengths) if sequence_lengths else 0,
         "avg_sequence_length": (
@@ -319,12 +319,12 @@ def write_outputs(
     for split, frame in tsv_frames.items():
         frame.to_csv(paths[split], sep="\t", index=False)
 
-    with paths["sasrec_sequence"].open("w", encoding="utf-8", newline="\n") as file_obj:
+    with paths["seqrec_sequence"].open("w", encoding="utf-8", newline="\n") as file_obj:
         for user_id_int, sequence in sequences.items():
             values = [str(user_id_int), *(str(item_id) for item_id in sequence)]
             file_obj.write(" ".join(values) + "\n")
 
-    with paths["sasrec_interactions"].open("w", encoding="utf-8", newline="\n") as file_obj:
+    with paths["seqrec_interactions"].open("w", encoding="utf-8", newline="\n") as file_obj:
         for user_id_int, sequence in sequences.items():
             for item_id in sequence:
                 file_obj.write(f"{user_id_int} {item_id}\n")
@@ -391,8 +391,8 @@ def process_category(args: argparse.Namespace, category: str) -> dict[str, objec
     print(f"  train_rows={len(tsv_frames['train'])}")
     print(f"  dev_rows={len(tsv_frames['valid'])}  source={raw_file_paths['valid'].name}")
     print(f"  test_rows={len(tsv_frames['test'])}")
-    print(f"  sasrec_sequences={len(sequences)}")
-    print(f"  sasrec_interactions={stats['num_sasrec_interactions']}")
+    print(f"  seqrec_sequences={len(sequences)}")
+    print(f"  seqrec_interactions={stats['num_seqrec_interactions']}")
     print(
         "  sequence_length="
         f"min:{stats['min_sequence_length']} "

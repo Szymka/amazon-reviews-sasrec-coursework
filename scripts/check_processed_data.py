@@ -20,8 +20,8 @@ REQUIRED_FILES = (
     "train.tsv",
     "dev.tsv",
     "test.tsv",
-    "sasrec_sequence.txt",
-    "sasrec_interactions.txt",
+    "seqrec_sequence.txt",
+    "seqrec_interactions.txt",
     "user2id.json",
     "id2user.json",
     "item2id.json",
@@ -47,8 +47,8 @@ REQUIRED_STATS_KEYS = (
     "num_train_rows",
     "num_dev_rows",
     "num_test_rows",
-    "num_sasrec_sequences",
-    "num_sasrec_interactions",
+    "num_seqrec_sequences",
+    "num_seqrec_interactions",
     "min_sequence_length",
     "max_sequence_length",
     "avg_sequence_length",
@@ -186,19 +186,19 @@ def check_sequence_rows(
     user_values: set[int],
     item_values: set[int],
 ) -> list[str]:
-    """检查 sasrec_sequence.txt。"""
+    """检查 seqrec_sequence.txt。"""
     issues: list[str] = []
     for line_number, row in enumerate(sequence_rows, start=1):
         if len(row) < 2:
-            issues.append(f"sasrec_sequence.txt 第 {line_number} 行少于 2 列。")
+            issues.append(f"seqrec_sequence.txt 第 {line_number} 行少于 2 列。")
             break
         user_id_int = row[0]
         item_ids = row[1:]
         if user_id_int == 0 or user_id_int not in user_values:
-            issues.append(f"sasrec_sequence.txt 第 {line_number} 行 user_id 非法。")
+            issues.append(f"seqrec_sequence.txt 第 {line_number} 行 user_id 非法。")
             break
         if any(item_id == 0 or item_id not in item_values for item_id in item_ids):
-            issues.append(f"sasrec_sequence.txt 第 {line_number} 行 item_id 非法。")
+            issues.append(f"seqrec_sequence.txt 第 {line_number} 行 item_id 非法。")
             break
     return issues
 
@@ -208,18 +208,18 @@ def check_interaction_rows(
     user_values: set[int],
     item_values: set[int],
 ) -> list[str]:
-    """检查 sasrec_interactions.txt。"""
+    """检查 seqrec_interactions.txt。"""
     issues: list[str] = []
     for line_number, row in enumerate(interaction_rows, start=1):
         if len(row) != 2:
-            issues.append(f"sasrec_interactions.txt 第 {line_number} 行不是两列。")
+            issues.append(f"seqrec_interactions.txt 第 {line_number} 行不是两列。")
             break
         user_id_int, item_id_int = row
         if user_id_int == 0 or user_id_int not in user_values:
-            issues.append(f"sasrec_interactions.txt 第 {line_number} 行 user_id 非法。")
+            issues.append(f"seqrec_interactions.txt 第 {line_number} 行 user_id 非法。")
             break
         if item_id_int == 0 or item_id_int not in item_values:
-            issues.append(f"sasrec_interactions.txt 第 {line_number} 行 item_id 非法。")
+            issues.append(f"seqrec_interactions.txt 第 {line_number} 行 item_id 非法。")
             break
     return issues
 
@@ -249,8 +249,8 @@ def check_stats(
         "num_train_rows": len(frames["train"]),
         "num_dev_rows": len(frames["dev"]),
         "num_test_rows": len(frames["test"]),
-        "num_sasrec_sequences": len(sequence_rows),
-        "num_sasrec_interactions": len(interaction_rows),
+        "num_seqrec_sequences": len(sequence_rows),
+        "num_seqrec_interactions": len(interaction_rows),
         "id_start_from": 1,
         "padding_id": 0,
     }
@@ -277,7 +277,7 @@ def print_samples(paths: dict[str, Path], sample_size: int) -> None:
         print(f"\n  {file_name} first_{min(sample_size, len(frame))}_rows:")
         print(frame.to_string(index=False))
 
-    for file_name in ("sasrec_sequence.txt", "sasrec_interactions.txt"):
+    for file_name in ("seqrec_sequence.txt", "seqrec_interactions.txt"):
         print(f"\n  {file_name} first_{sample_size}_lines:")
         with paths[file_name].open("r", encoding="utf-8") as file_obj:
             for index, line in enumerate(file_obj, start=1):
@@ -316,8 +316,8 @@ def check_category(processed_dir: Path, category: str, sample_size: int) -> bool
     item2id = load_json(paths["item2id.json"])
     id2item = load_json(paths["id2item.json"])
     stats = load_json(paths["stats.json"])
-    sequence_rows = read_space_lines(paths["sasrec_sequence.txt"])
-    interaction_rows = read_space_lines(paths["sasrec_interactions.txt"])
+    sequence_rows = read_space_lines(paths["seqrec_sequence.txt"])
+    interaction_rows = read_space_lines(paths["seqrec_interactions.txt"])
 
     issues.extend(check_contiguous_ids("user2id", user2id))
     issues.extend(check_contiguous_ids("item2id", item2id))

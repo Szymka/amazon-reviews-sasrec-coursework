@@ -4,9 +4,9 @@ import argparse
 import json
 from pathlib import Path
 
-from models.sasrec.dataset import DEFAULT_CATEGORIES
-from models.sasrec.dataset import build_category_datasets
-from models.sasrec.dataset import build_datasets_from_config
+from models.seqrec.dataset import DEFAULT_CATEGORIES
+from models.seqrec.dataset import build_category_datasets
+from models.seqrec.dataset import build_datasets_from_config
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
         "--config",
         type=Path,
         default=None,
-        help="可选：直接从 configs/sasrec_*.yaml 读取路径和 maxlen。",
+        help="可选：直接从 configs/seqrec_*.yaml 读取路径和 maxlen。",
     )
     parser.add_argument(
         "--maxlen",

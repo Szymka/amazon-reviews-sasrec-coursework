@@ -1,4 +1,4 @@
-pandas
-numpy
-tqdm
-requests
+pandas==3.0.2
+Requests==2.33.1
+torch==2.8.0
+tqdm==4.67.1

@@ -61,7 +61,7 @@ def build_summary(categories: list[str], processed_dir: Path) -> str:
         "",
         "本文件后续由 scripts/make_data_readme.py 自动生成。",
         "",
-        "每个类别的输出文件统一为 train.tsv、dev.tsv、test.tsv、sasrec_sequence.txt、user2id.json、id2user.json、item2id.json、id2item.json、stats.json。",
+        "每个类别的输出文件统一为 train.tsv、dev.tsv、test.tsv、seqrec_sequence.txt、user2id.json、id2user.json、item2id.json、id2item.json、stats.json。",
         "",
         "样本级 TSV 字段: user_id_int, target_id, rating, timestamp, seq_ids, raw_user_id, raw_parent_asin。",
         "",

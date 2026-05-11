@@ -63,7 +63,7 @@ data/raw/Industrial_and_Scientific/meta_Industrial_and_Scientific.jsonl.gz
 data/processed/<category>/train.tsv
 data/processed/<category>/dev.tsv
 data/processed/<category>/test.tsv
-data/processed/<category>/sasrec_sequence.txt
+data/processed/<category>/seqrec_sequence.txt
 data/processed/<category>/user2id.json
 data/processed/<category>/id2user.json
 data/processed/<category>/item2id.json
@@ -76,7 +76,7 @@ data/processed/<category>/stats.json
 - `train.tsv`：样本级训练数据，对应每个用户的前 `N-2` 个交互
 - `dev.tsv`：样本级验证数据，对应每个用户的第 `N-1` 个交互
 - `test.tsv`：样本级测试数据，对应每个用户的第 `N` 个交互
-- `sasrec_sequence.txt`：经典 SASRec 序列格式文件
+- `seqrec_sequence.txt`：经典 SASRec 序列格式文件
 - `user2id.json`：原始用户 ID 到连续整数 ID 的映射
 - `id2user.json`：连续整数 ID 到原始用户 ID 的映射
 - `item2id.json`：`parent_asin` 到连续整数 ID 的映射
@@ -103,7 +103,7 @@ user_id_int	target_id	rating	timestamp	seq_ids	raw_user_id	raw_parent_asin
 - `raw_user_id`：原始用户 ID，便于排查；
 - `raw_parent_asin`：原始商品 ID，便于排查。
 
-经典 SASRec 序列文件 `sasrec_sequence.txt` 采用整数 ID 后的序列格式：
+经典 SASRec 序列文件 `seqrec_sequence.txt` 采用整数 ID 后的序列格式：
 
 ```text
 user_id_int item_id_1 item_id_2 item_id_3 ...
@@ -121,7 +121,7 @@ user_id_int item_id_1 item_id_2 item_id_3 ...
 - 每一行对应一个用户；
 - 第一列是重新映射后的 `user_id_int`；
 - 后续列是按照时间升序排列的历史 `item_id`；
-- `sasrec_sequence.txt` 主要保留给经典 SASRec 读取流程，样本级训练、验证和测试以 TSV 文件为准。
+- `seqrec_sequence.txt` 主要保留给经典 SASRec 读取流程，样本级训练、验证和测试以 TSV 文件为准。
 
 ## 7. ID 映射规则
 

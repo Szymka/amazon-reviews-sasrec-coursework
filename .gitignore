@@ -39,6 +39,21 @@ checkpoint/
 runs/
 wandb/
 logs/
+*.log
+
+# Training outputs and results (keep only small summaries)
+train/*.pth
+train/*.pt
+train/*.ckpt
+train/*_config.json
+train/*.log
+evaluation/*.pth
+evaluation/*.pt
+evaluation/*.ckpt
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+*.ipynb
 
 # IDE and system files
 .vscode/
@@ -48,3 +63,6 @@ Thumbs.db
 
 # Keep tiny examples trackable
 !examples/tiny_sample/**
+
+# Keep directory placeholders
+!.gitkeep

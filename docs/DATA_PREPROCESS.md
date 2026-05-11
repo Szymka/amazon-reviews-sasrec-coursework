@@ -12,7 +12,7 @@ Amazon 官方 raw 文件名使用 `valid.csv.gz`。本项目 processed 阶段输
 
 ## 输入文件
 
-`scripts/preprocess_to_sasrec.py` 读取：
+`scripts/preprocess_to_seqrec.py` 读取：
 
 ```text
 data/raw/<category>/<category>.train.csv.gz
@@ -36,8 +36,8 @@ user_id,parent_asin,rating,timestamp,history
 train.tsv
 dev.tsv
 test.tsv
-sasrec_sequence.txt
-sasrec_interactions.txt
+seqrec_sequence.txt
+seqrec_interactions.txt
 user2id.json
 id2user.json
 item2id.json
@@ -70,21 +70,21 @@ python scripts/check_raw_data.py
 单类别 dry-run：
 
 ```powershell
-python scripts/preprocess_to_sasrec.py --categories Industrial_and_Scientific --dry-run
+python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific --dry-run
 ```
 
 单类别预处理：
 
 ```powershell
-python scripts/preprocess_to_sasrec.py --categories Industrial_and_Scientific --overwrite
+python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific --overwrite
 ```
 
 三类别预处理：
 
 ```powershell
-python scripts/preprocess_to_sasrec.py --categories Industrial_and_Scientific --overwrite
-python scripts/preprocess_to_sasrec.py --categories Musical_Instruments --overwrite
-python scripts/preprocess_to_sasrec.py --categories CDs_and_Vinyl --overwrite
+python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific --overwrite
+python scripts/preprocess_to_seqrec.py --categories Musical_Instruments --overwrite
+python scripts/preprocess_to_seqrec.py --categories CDs_and_Vinyl --overwrite
 ```
 
 检查 processed：
@@ -96,7 +96,7 @@ python scripts/check_processed_data.py --categories Industrial_and_Scientific Mu
 Windows PowerShell 如果找不到 `python`，使用：
 
 ```powershell
-$env:PYTHONIOENCODING='utf-8'; & "C:\Users\Chess\AppData\Local\Programs\Python\Python312\python.exe" scripts/check_processed_data.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl
+$env:PYTHONIOENCODING='utf-8'; & "C:\Path\To\Your\Python\python.exe" scripts/check_processed_data.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl
 ```
 
 ## 注意

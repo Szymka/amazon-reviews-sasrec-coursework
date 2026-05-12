@@ -1,0 +1,1 @@
+{"epoch": 1, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.22971237262812924, "valid_hr10": 0.3799, "test_ndcg10": 0.21911387900500445, "test_hr10": 0.3636}

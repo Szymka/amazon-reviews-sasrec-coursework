@@ -1,0 +1,1 @@
+{"epoch": 1, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.23695916704271622, "valid_hr10": 0.4095, "test_ndcg10": 0.22549200017210055, "test_hr10": 0.3948}

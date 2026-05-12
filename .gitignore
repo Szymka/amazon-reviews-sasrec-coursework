@@ -123,3 +123,7 @@ Thumbs.db
 
 # SASRec checkpoints used by A-LLMRec RecSys loader
 !pre_train/sasrec/**/*.pth
+
+# 课程实验：metrics jsonl 与图表（可选纳入版本库）
+!results/coursework/
+!results/coursework/**

@@ -1,0 +1,3 @@
+{"epoch": 1, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.22513137578028958, "valid_hr10": 0.3743, "test_ndcg10": 0.2166148099485468, "test_hr10": 0.3586}
+{"epoch": 2, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.23493880174658435, "valid_hr10": 0.3926, "test_ndcg10": 0.22699433497259752, "test_hr10": 0.3759}
+{"epoch": 3, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.2605039269721265, "valid_hr10": 0.4327, "test_ndcg10": 0.2504420778006874, "test_hr10": 0.4119}

@@ -12,3 +12,6 @@ bitsandbytes>=0.42.0
 
 # 从 coursework 原始 Amazon 2023 5-core 生成 processed/（可选）
 pandas
+
+# 评估结果可视化（三类别批跑 / plot_coursework_metrics.py）
+matplotlib>=3.7.0

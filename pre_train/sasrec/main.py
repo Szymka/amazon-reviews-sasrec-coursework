@@ -1,7 +1,11 @@
-import os
-import time
-import torch
 import argparse
+import json
+import os
+import random
+import time
+
+import numpy as np
+import torch
 
 from model import SASRec
 from data_preprocess import *
@@ -29,6 +33,25 @@ parser.add_argument(
     help='跳过 Amazon json.gz 解析；使用仓库根目录下 data/amazon/<dataset>.txt（由 scripts/prepare_allmrec_amazon.py 生成）。',
 )
 parser.add_argument('--n_workers', default=3, type=int, help='WarpSampler 后台进程数；Windows 上可改为 1。')
+parser.add_argument(
+    '--eval_num_negatives',
+    default=100,
+    type=int,
+    help='验证/测试评估时每个用户的随机负样本数；候选池大小为该值+1，用于 NDCG@10 / HR@10。',
+)
+parser.add_argument('--eval_seed', default=42, type=int, help='评估阶段随机负采样与用户子采样的随机种子（可复现）。')
+parser.add_argument(
+    '--eval_every',
+    default=20,
+    type=int,
+    help='每隔多少个 epoch 做一次验证集+测试集评估（第 1 个 epoch 也会评估）。',
+)
+parser.add_argument(
+    '--metrics_jsonl',
+    default=None,
+    type=str,
+    help='若指定，将每次评估的指标以一行 JSON 追加写入该路径（便于三类别批跑与画图）。',
+)
 
 args = parser.parse_args()
 
@@ -84,7 +107,11 @@ if __name__ == '__main__':
     
     if args.inference_only:
         model.eval()
+        random.seed(args.eval_seed)
+        np.random.seed(args.eval_seed)
         t_test = evaluate(model, dataset, args)
+        t_valid = evaluate_valid(model, dataset, args)
+        print('valid (NDCG@10: %.4f, HR@10: %.4f)' % (t_valid[0], t_valid[1]))
         print('test (NDCG@10: %.4f, HR@10: %.4f)' % (t_test[0], t_test[1]))
     
     bce_criterion = torch.nn.BCEWithLogitsLoss()
@@ -111,11 +138,13 @@ if __name__ == '__main__':
             if step % 100 == 0:
                 print("loss in epoch {} iteration {}: {}".format(epoch, step, loss.item())) # expected 0.4~0.6 after init few epochs
     
-        if epoch % 20 == 0 or epoch == 1:
+        if epoch % args.eval_every == 0 or epoch == 1:
             model.eval()
             t1 = time.time() - t0
             T += t1
             print('Evaluating', end='')
+            random.seed(args.eval_seed)
+            np.random.seed(args.eval_seed)
             t_test = evaluate(model, dataset, args)
             t_valid = evaluate_valid(model, dataset, args)
             print('\n')
@@ -123,6 +152,21 @@ if __name__ == '__main__':
                     % (epoch, T, t_valid[0], t_valid[1], t_test[0], t_test[1]))
 
             print(str(t_valid) + ' ' + str(t_test) + '\n')
+            if args.metrics_jsonl:
+                out_path = os.path.abspath(args.metrics_jsonl)
+                out_dir = os.path.dirname(out_path)
+                if out_dir:
+                    os.makedirs(out_dir, exist_ok=True)
+                row = {
+                    "epoch": epoch,
+                    "dataset": args.dataset,
+                    "valid_ndcg10": float(t_valid[0]),
+                    "valid_hr10": float(t_valid[1]),
+                    "test_ndcg10": float(t_test[0]),
+                    "test_hr10": float(t_test[1]),
+                }
+                with open(out_path, "a", encoding="utf-8") as mf:
+                    mf.write(json.dumps(row, ensure_ascii=False) + "\n")
             t0 = time.time()
             model.train()
     

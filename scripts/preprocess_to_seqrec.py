@@ -1,11 +1,22 @@
 """将 Amazon Reviews 2023 5-Core split 转换为顺序 Top-K 推荐可用的 TSV / 辅助文件。
 
-对每个用户，设完整按时间排列的交互长度为 N，则与作业一致地有：
-  - 监督 / 训练前缀：前 N-2 个交互（对齐官方 train 切片）；
-  - 验证目标：第 N-1 个交互（对齐官方 valid → 本项目 dev.tsv）；
-  - 测试目标：第 N 个交互（对齐官方 test → 本项目 test.tsv）。
+数据性质（5-Core）
+-----------------
+使用官方 **5-Core** 子集：每位用户、每个商品在子集中至少 **5** 条交互，减轻极端稀疏。
 
-本脚本读取官方 Leave-Last-Out 5-Core 分片（同名 train / valid / test 三张表 gzip），不写死类别名（通过 CLI 传入）；processed 中将 valid 对齐为 dev.tsv。
+用户序列长度记为 N（按时间排序的交互序列）。与作业/Leave-Last-Out 设定一致：
+
+  - **训练**：前 **N−2** 个交互（写入 ``train.tsv`` 多行及监督前缀；与官方 ``train`` 分片对齐）。
+  - **验证目标**：第 **N−1** 个交互（官方 ``valid`` → 本仓库 ``dev.tsv``）。
+  - **测试目标**：第 **N** 个交互（官方 ``test`` → ``test.tsv``）。
+
+TSV 语义（与 ``user_id`` / ``parent_asin`` / ``history`` 描述一致）
+------------------------------------------------------------------
+每行表示：用户在评论完 ``history``（及 ``seq_ids`` 所编码的已交互商品）**之后**，又评论了 ``raw_parent_asin``（整数 ``target_id``）。验证/测试行即：在给定 history 下预测 ``parent_asin`` / ``target_id``。
+
+输出列：``user_id_int``, ``target_id``, ``rating``, ``timestamp``, ``seq_ids``, ``raw_user_id``, ``raw_parent_asin``。
+
+本脚本读取官方 gzip 分片（同名 train / valid / test），类别名由 CLI 传入；另写出 ``sasrec_interactions.txt`` 供 SASRec 与 ``prepare_allmrec_amazon.py`` 使用。
 """
 
 from __future__ import annotations

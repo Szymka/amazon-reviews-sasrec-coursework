@@ -1,0 +1,3 @@
+{"epoch": 1, "dataset": "Musical_Instruments", "valid_ndcg10": 0.2918853593949738, "valid_hr10": 0.4639, "test_ndcg10": 0.26987888149703265, "test_hr10": 0.4364}
+{"epoch": 2, "dataset": "Musical_Instruments", "valid_ndcg10": 0.29884026534899943, "valid_hr10": 0.4751, "test_ndcg10": 0.27634587374010555, "test_hr10": 0.449}
+{"epoch": 3, "dataset": "Musical_Instruments", "valid_ndcg10": 0.3105235705691888, "valid_hr10": 0.4946, "test_ndcg10": 0.2871078679489103, "test_hr10": 0.4634}

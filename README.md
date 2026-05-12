@@ -1,114 +1,129 @@
-# Amazon 顺序推荐 · A-LLMRec（课程数据）
+# Amazon 顺序推荐（5-Core）· SASRec / A-LLMRec
 
-本仓库在 [A-LLMRec](https://github.com/CHIANGEL/A-LLMRec)（KDD 2024）代码基础上，使用 `data/processed/` 下三类 Amazon Reviews 2023 5-core 子集：
+本仓库面向 **Amazon Reviews 2023 5-Core** 下三个类别：**Industrial_and_Scientific**、**Musical_Instruments**、**CDs_and_Vinyl**。数据划分、TSV 字段与 **NDCG@10 / HR@10** 评估方式见 **[docs/COURSEWORK_DATA_AND_EVAL.md](docs/COURSEWORK_DATA_AND_EVAL.md)**（建议先读）。
 
-- `Industrial_and_Scientific`
-- `Musical_Instruments`
-- `CDs_and_Vinyl`
+---
 
-每类目录中的 `sasrec_interactions.txt`（`user_id item_id` 逐行）与官方 SASRec / A-LLMRec 的 `data_partition` 格式一致；`id2item.json` 用于构造占位商品标题文本。
+## 环境与 conda
 
-## 环境
-
-本仓库约定在 **conda 环境 `llmrec`** 中运行（请自行创建并安装 PyTorch / 依赖；名称必须为 `llmrec` 时可直接复制下文命令）。
+在 **`llmrec`** conda 环境中操作：
 
 ```bash
 conda activate llmrec
+cd <本仓库根目录>
 pip install -r requirements.txt
 ```
 
-若习惯非交互式调用，可使用：
+非交互式：
 
 ```bash
-conda run -n llmrec python scripts/prepare_allmrec_amazon.py --overwrite
-conda run -n llmrec python main.py --help
+conda run -n llmrec pip install -r requirements.txt
 ```
 
-以下示例均可将 `python` 换成 `conda run -n llmrec python`（在已 `activate llmrec` 的终端里则直接 `python` 即可）。
+---
 
-Stage 2 与推理使用 `facebook/opt-6.7b`（8-bit），需要 **NVIDIA GPU + 足够显存** 及 `bitsandbytes`。若仅验证协同过滤部分，可只训练 **SASRec** 与 A-LLMRec **Stage 1**（Sentence-BERT 对齐，仍建议 GPU）。
+## 数据划分（摘要）
 
-## 准备 `data/amazon/`（A-LLMRec 默认路径）
+对每个用户，按时间的完整交互序列长度为 **N**：
 
-在项目根目录执行：
+| 子集 | 内容 |
+|------|------|
+| 训练 | 前 **N−2** 个交互 |
+| 验证 | 第 **N−1** 个交互（`dev.tsv` / 官方 valid） |
+| 测试 | 第 **N** 个交互（`test.tsv` / 官方 test） |
+
+`train.tsv` / `dev.tsv` / `test.tsv` 含 **`user_id_int`（用户）**、**`target_id` / `raw_parent_asin`（商品）**、**`rating`、`timestamp`**、**`seq_ids`（history 对应的整数序列）**、**`raw_user_id`** 等，语义为：用户在对 **history** 中最后一个商品交互之后，又对当前行的 **parent_asin** 产生交互；验证/测试即根据 history **预测该 parent_asin**。
+
+由 `scripts/preprocess_to_seqrec.py` 从 `data/raw/<类别>/` 生成 `data/processed/<类别>/`；**5-Core** 保证用户与商品交互次数下限，减轻稀疏。
+
+---
+
+## 推荐流程（训练 → 验证 / 测试）
+
+以下均在**仓库根目录**执行（除非注明）。
+
+### 0）准备 processed 与 `data/amazon/`（首次或更新数据后）
 
 ```bash
+# 若尚无 processed，需先放入官方 gzip 再执行：
+python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl --overwrite
+
+# 生成 SASRec / A-LLMRec 共用的 user-item 行文件：
 python scripts/prepare_allmrec_amazon.py --overwrite
 ```
 
-将生成例如 `data/amazon/Industrial_and_Scientific.txt` 与 `data/amazon/Industrial_and_Scientific_text_name_dict.json.gz`（与原论文代码相同，为 pickle 文件，扩展名沿用 `json.gz`）。
+### 1）训练（SASRec）
 
-**注意：** 根目录的 `main.py` 是 **A-LLMRec**（参数为 `--pretrain_stage1`、`--rec_pre_trained_data`、`--gpu_num` 等）。若带上 `--dataset` 或 `--skip_preprocess`，脚本会直接提示退出。训练 SASRec 请使用 **`pre_train/sasrec/main.py`**（可先 `cd pre_train/sasrec` 再 `python main.py ...`，或在根目录执行 `python pre_train/sasrec/main.py ...`）。
+**入口必须是** `pre_train/sasrec/main.py`（**不要**用根目录 `main.py` 跑 `--dataset`，那是 A-LLMRec）。
 
-若遇 `cached_download` / `huggingface_hub` 相关 `ImportError`，在 `llmrec` 环境中执行 `pip install -r requirements.txt`（已上限定 `huggingface_hub<0.26`），或单独执行：`pip install "huggingface_hub>=0.14,<0.26"`。
-
-## 1）预训练 SASRec（协同过滤骨架）
-
-在 `pre_train/sasrec` 目录下运行（**工作目录必须是该文件夹**，以便正确解析 `../../data/amazon/`）：
+单类别示例（训练集上 BCE；按 `--eval_every` 在**验证集 + 测试集**上算 **NDCG@10、HR@10**，候选为 1 正 + 100 负，可 `--eval_num_negatives` 调整）：
 
 ```bash
-cd pre_train/sasrec
-python main.py --device cuda:0 --dataset Industrial_and_Scientific --skip_preprocess --num_epochs 200 --batch_size 128
+python pre_train/sasrec/main.py ^
+  --dataset Industrial_and_Scientific ^
+  --skip_preprocess ^
+  --device cuda:0 ^
+  --num_epochs 200 ^
+  --batch_size 128 ^
+  --n_workers 1 ^
+  --eval_every 20 ^
+  --metrics_jsonl results/coursework/Industrial_and_Scientific_metrics.jsonl
 ```
 
-或在**仓库根目录**直接调用 SASRec 入口（`data/amazon` 与 checkpoint 路径已按脚本位置解析，可不 `cd`）：
+（Linux/macOS 将 `^` 换为行末 `\`。）
+
+**三类别顺序训练并写指标、可选自动画图：**
 
 ```bash
-python pre_train/sasrec/main.py --device cuda:0 --dataset Industrial_and_Scientific --skip_preprocess --num_epochs 200 --batch_size 128
+python scripts/run_three_categories_sasrec.py --num_epochs 5 --device cuda:0 --batch_size 256 --n_workers 1 --eval_every 1 --plot
 ```
 
-**不要**在根目录运行根目录的 `main.py` 并带上 `--dataset` / `--skip_preprocess`：那是 **A-LLMRec**，参数不同。
-
-常用参数：
-
-| 参数 | 说明 |
-|------|------|
-| `--skip_preprocess` | 不读 `json.gz` 元数据，使用仓库根目录已生成的 `data/amazon/<dataset>.txt` |
-| `--dataset` | 与 `data/amazon/<dataset>.txt` 文件名（不含 `.txt`）一致 |
-| `--n_workers` | `WarpSampler` 进程数；Windows 建议 `1` |
-
-训练结束会在当前目录下生成 `<dataset>/SASRec.epoch=....pth`。`models/recsys_model.py` 会从 `pre_train/sasrec/<dataset>/` 目录加载 **唯一** 的 `.pth` 文件，请保持该目录内只有一个权重文件。
-
-## 2）A-LLMRec Stage 1 / 2 / 推理
-
-回到项目根目录：
+仅根据已有 `*_metrics.jsonl` 出图：
 
 ```bash
-# Stage 1：对齐协同嵌入与文本嵌入
-python main.py --gpu_num 0 --pretrain_stage1 --rec_pre_trained_data Industrial_and_Scientific --num_epochs 10
-
-# Stage 2：OPT 侧训练（需要大显存）
-python main.py --gpu_num 0 --pretrain_stage2 --rec_pre_trained_data Industrial_and_Scientific --llm opt --num_epochs 10
-
-# 推理（默认加载 phase1 epoch=10 与 phase2 epoch=5 的权重命名；需与训练保存一致）
-python main.py --gpu_num 0 --inference --rec_pre_trained_data Industrial_and_Scientific --llm opt
-python eval.py
+python scripts/plot_coursework_metrics.py --metrics_dir results/coursework
 ```
 
-多卡可加 `--multi_gpu` 并配合 `CUDA_VISIBLE_DEVICES`。
+默认输出：`results/coursework/metrics_curves_ndcg_hr.png`（各 epoch 曲线）、`final_test_ndcg10_hr10_bar.png`（最后一轮测试集对比）。
 
-## 原始数据 → `data/processed/`（可选）
+### 2）验证 / 测试在代码中的对应关系
 
-若需从官方 gzip 重新生成 `processed/`，仍可使用：
+- **验证集指标**：用 **训练前缀** 构造序列，预测 **第 N−1 个物品**（与 `dev.tsv` 目标一致）。
+- **测试集指标**：用 **训练前缀 + 验证物品** 构造序列，预测 **第 N 个物品**（与 `test.tsv` 目标一致）。
+- 指标含义见 `docs/COURSEWORK_DATA_AND_EVAL.md`（随机负采样、用户子采样规则等）。
 
-```bash
-python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl --overwrite
-```
+### 3）A-LLMRec（可选）
 
-（需先将官方 `train/valid/test` 放入 `data/raw/<类别>/`。）
+根目录 `main.py` 为 **A-LLMRec**（`--pretrain_stage1`、`--rec_pre_trained_data`、`--gpu_num` 等）。需先在 `pre_train/sasrec/<类别>/` 下保留**唯一** SASRec `.pth`。详见原论文流程；数据划分与上表一致。
 
-## 目录说明
+若根目录命令误含 `--dataset` / `--skip_preprocess`，脚本会提示改用 SASRec 入口。
+
+---
+
+## 常用路径
 
 | 路径 | 作用 |
 |------|------|
-| `main.py` / `train_model.py` | A-LLMRec 训练与推理入口 |
-| `models/` | A-LLMRec、LLM、SASRec 封装 |
-| `pre_train/sasrec/` | SASRec 预训练 |
-| `data/processed/` | 三类已处理子集（交互与映射） |
-| `data/amazon/` | 由脚本生成的 A-LLMRec 扁平输入 |
-| `scripts/prepare_allmrec_amazon.py` | 生成 `data/amazon/` |
+| `docs/COURSEWORK_DATA_AND_EVAL.md` | 划分、字段、NDCG@10、操作顺序 |
+| `scripts/preprocess_to_seqrec.py` | raw gzip → `data/processed/` |
+| `scripts/prepare_allmrec_amazon.py` | → `data/amazon/` |
+| `scripts/run_three_categories_sasrec.py` | 三类别 SASRec + metrics |
+| `scripts/plot_coursework_metrics.py` | 评估可视化 |
+| `pre_train/sasrec/main.py` | SASRec 训练与评估 |
+| `data/processed/<类别>/` | TSV、映射、`sasrec_interactions.txt` |
+| `data/amazon/` | 扁平交互，供 SASRec `--skip_preprocess` |
+| `results/coursework/` | `*_metrics.jsonl` 与 PNG |
 
-## 引用
+---
+
+## 依赖与排错
+
+- `requirements.txt` 含 `huggingface_hub<0.26` 以兼容 `sentence-transformers==2.2.2`（A-LLMRec Stage1）。若遇 `cached_download` 报错：`pip install -r requirements.txt`。
+- `transformers` 与 PyTorch 的 `FutureWarning` 可忽略。
+
+---
+
+## 引用（A-LLMRec）
 
 ```bibtex
 @inproceedings{chiang2024allmrec,

@@ -1,68 +1,120 @@
-# Python cache
+# --- 策略：不提交完整 raw/processed、不提交由脚本生成的大体积数据与权重 ---
+# --- 仅跟踪：源码、文档、小体积占位 .gitkeep、（可选）极小示例 ---
+# --- Do not commit: full raw/processed, prepared amazon flat files, checkpoints, bulky exports ---
+
+# Python
 __pycache__/
 **/__pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
 
 # Virtual environments
 .venv/
 venv/
 env/
 
-# Local environment files
+# Secrets / local env
 .env
 .env.*
 
-# Large raw and processed data
+# 原始与预处理完整数据（仅保留目录下 .gitkeep）
 data/raw/*
-data/processed/*
 !data/raw/.gitkeep
+data/processed/*
 !data/processed/.gitkeep
+
+# 由 prepare_allmrec_amazon 生成的扁平交互与文本字典（体积大，一律本地生成）
+data/amazon/*
+!data/amazon/.gitkeep
+
+# A-LLMRec / SASRec 权重与推理输出
+models/saved_models/
+recommendation_output.txt
+
+# Ship tiny fixtures with the repo
+!examples/tiny_sample/**
+
+# Avoid accidentally committing trained weights under examples/
+examples/tiny_sample/**/*.pth
+examples/tiny_sample/**/*.pt
+examples/tiny_sample/**/*.ckpt
+examples/tiny_sample/**/wandb/
+
+# Bulk / compressed data (any path)
 *.csv.gz
 *.jsonl.gz
 *.json.gz
+*.tsv.gz
 *.part
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.npz
+*.npy
+*.pkl
+*.pickle
 
-# Archives and ad-hoc local data exports
+# Archives / local dumps
 *.zip
 *.tar
 *.tar.gz
-*.parquet
+*.7z
+*.rar
 
-# Model checkpoints and training artifacts
+# Model weights & large binaries
 checkpoints/
 checkpoint/
-*.pt
-*.pth
-*.ckpt
-*.bin
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.bin
+**/*.safetensors
+**/*.onnx
+*.gguf
+
+# Experiment tracking & training runs
 runs/
 wandb/
+mlruns/
+tensorboard/
+tensorboard_logs/
+lightning_logs/
+hydra/
+.hydra/
+outputs/
+output/
+
+# Logs
 logs/
+**/*.log
 *.log
 
-# Training outputs and results (keep only small summaries)
-train/*.pth
-train/*.pt
-train/*.ckpt
-train/*_config.json
-train/*.log
-evaluation/*.pth
-evaluation/*.pt
-evaluation/*.ckpt
+# 训练指标与图表（不提交；需保留目录占位时可提交 .gitkeep）
+results/*
+!results/.gitkeep
+!results/coursework/
+results/coursework/*
+!results/coursework/.gitkeep
 
-# Jupyter notebooks checkpoints
+# Jupyter checkpoint sidecars
 .ipynb_checkpoints/
-*.ipynb
 
-# IDE and system files
+# Editors / OS
 .vscode/
 .idea/
+*.swp
+*~
 .DS_Store
 Thumbs.db
 
-# Keep tiny examples trackable
-!examples/tiny_sample/**
-
-# Keep directory placeholders
+# Placeholder files
 !.gitkeep

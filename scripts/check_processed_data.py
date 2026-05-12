@@ -1,4 +1,4 @@
-"""检查预处理后的 SASRec processed 数据文件。"""
+"""检查预处理后的顺序推荐 processed 数据文件。"""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ REQUIRED_STATS_KEYS = (
 def parse_args() -> argparse.Namespace:
     """解析命令行参数。"""
     parser = argparse.ArgumentParser(
-        description="检查预处理后的 SASRec 数据和映射文件。"
+        description="检查预处理后的顺序推荐数据与映射文件。"
     )
     parser.add_argument(
         "--processed-dir",

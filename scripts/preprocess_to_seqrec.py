@@ -1,8 +1,22 @@
-"""将 Amazon Reviews 2023 5-Core split 转换为 SASRec 可用格式。
+"""将 Amazon Reviews 2023 5-Core split 转换为顺序 Top-K 推荐可用的 TSV / 辅助文件。
 
-本脚本只读取官方 Leave-Last-Out split:
-<category>.train.csv.gz、<category>.valid.csv.gz、<category>.test.csv.gz。
-raw 阶段使用 valid，processed 阶段输出 dev.tsv。
+数据性质（5-Core）
+-----------------
+使用官方 **5-Core** 子集：每位用户、每个商品在子集中至少 **5** 条交互，减轻极端稀疏。
+
+用户序列长度记为 N（按时间排序的交互序列）。与作业/Leave-Last-Out 设定一致：
+
+  - **训练**：前 **N−2** 个交互（写入 ``train.tsv`` 多行及监督前缀；与官方 ``train`` 分片对齐）。
+  - **验证目标**：第 **N−1** 个交互（官方 ``valid`` → 本仓库 ``dev.tsv``）。
+  - **测试目标**：第 **N** 个交互（官方 ``test`` → ``test.tsv``）。
+
+TSV 语义（与 ``user_id`` / ``parent_asin`` / ``history`` 描述一致）
+------------------------------------------------------------------
+每行表示：用户在评论完 ``history``（及 ``seq_ids`` 所编码的已交互商品）**之后**，又评论了 ``raw_parent_asin``（整数 ``target_id``）。验证/测试行即：在给定 history 下预测 ``parent_asin`` / ``target_id``。
+
+输出列：``user_id_int``, ``target_id``, ``rating``, ``timestamp``, ``seq_ids``, ``raw_user_id``, ``raw_parent_asin``。
+
+本脚本读取官方 gzip 分片（同名 train / valid / test），类别名由 CLI 传入；另写出 ``sasrec_interactions.txt`` 供 SASRec 与 ``prepare_allmrec_amazon.py`` 使用。
 """
 
 from __future__ import annotations
@@ -44,7 +58,7 @@ REQUIRED_RAW_COLUMNS = ("user_id", "parent_asin", "rating", "timestamp", "histor
 def parse_args() -> argparse.Namespace:
     """解析命令行参数。"""
     parser = argparse.ArgumentParser(
-        description="把 Amazon Reviews 2023 5-Core split 预处理为 SASRec 格式。"
+        description="把 Amazon Reviews 2023 5-Core split 预处理为 coursework 顺序推荐（LLMRank）可用的 TSV / 附件。"
     )
     parser.add_argument(
         "--raw-dir",
@@ -431,7 +445,7 @@ def main() -> int:
 
     try:
         categories = validate_categories(args.categories)
-        print("SASRec 数据预处理")
+        print("coursework / LLMRank 流水线数据预处理")
         print(f"raw_dir={args.raw_dir}")
         print(f"processed_dir={args.processed_dir}")
         print(f"categories={categories}")

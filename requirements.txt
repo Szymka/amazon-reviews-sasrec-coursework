@@ -1,4 +1,17 @@
-pandas==3.0.2
-Requests==2.33.1
-torch==2.8.0
-tqdm==4.67.1
+# A-LLMRec + SASRec（pip 侧）。PyTorch 请按本机 CUDA 从 https://pytorch.org 安装。
+torch>=2.1.0
+numpy>=1.26.0
+tqdm
+pytz
+transformers==4.32.1
+# sentence-transformers 2.2.x 仍从 huggingface_hub 导入 cached_download；0.26+ 已移除
+huggingface_hub>=0.14.0,<0.26.0
+sentence-transformers==2.2.2
+accelerate>=0.25.0
+bitsandbytes>=0.42.0
+
+# 从 coursework 原始 Amazon 2023 5-core 生成 processed/（可选）
+pandas
+
+# 评估结果可视化（三类别批跑 / plot_coursework_metrics.py）
+matplotlib>=3.7.0

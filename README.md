@@ -1,302 +1,100 @@
-# Amazon Reviews 2023 Recommendation System Coursework
+# Amazon 顺序推荐（5-Core）· SASRec / A-LLMRec
 
-This repository is a team-oriented engineering scaffold for a recommendation-system coursework project based on Amazon Reviews 2023 5-Core data. The current experiment target is **SASRec-style sequential recommendation** implemented in PyTorch on three product categories.
+三类数据：**Industrial_and_Scientific**、**Musical_Instruments**、**CDs_and_Vinyl**（Amazon Reviews 2023 **5-Core**）。
 
-**Implementation Note**: This project follows the architectural ideas of the SASRec paper (Transformer + positional encoding + causal attention), but is completely independent in implementation details and technical stack:
-
-| Aspect            | Original SASRec (TensorFlow)        | This Implementation (PyTorch) |
-| ----------------- | ----------------------------------- | ----------------------------- |
-| Framework         | TensorFlow                          | PyTorch                       |
-| Loss Function     | BPR (Bayesian Personalized Ranking) | CrossEntropyLoss              |
-| Attention Mask    | TensorFlow-specific                 | PyTorch-native causal mask    |
-| Training Pipeline | Custom TF Estimator                 | PyTorch native training loop  |
-
-This is an **independent reimplementation**, not a fork or adaptation of the original SASRec codebase.
+| 你想… | 打开 |
+|--------|------|
+| **按清单训练、验证、写报告、查命令** | **[docs/EXPERIMENT_GUIDE.md](docs/EXPERIMENT_GUIDE.md)**（推荐先看） |
+| 核对 **N−2/N−1/N**、TSV 字段、NDCG@10 与代码 | [docs/COURSEWORK_DATA_AND_EVAL.md](docs/COURSEWORK_DATA_AND_EVAL.md) |
+| 文档索引 | [docs/README.md](docs/README.md) |
 
 ---
 
-## ✅ Current Status
+## 环境与 conda（全体统一）
 
-### Completed
-
-- ✅ Raw Amazon Reviews 2023 5-Core files downloaded for three categories
-- ✅ All three categories converted to sequential recommendation-ready processed files
-- ✅ SeqRec model implementation (`models/seqrec/`)
-- ✅ Training script with early stopping and model saving (`train/train_seqrec.py`)
-- ✅ Evaluation metrics (NDCG@10, HitRate@10, etc.)
-- ✅ Configuration files for all categories (`configs/seqrec_*.yaml`)
-- ✅ Data loading and preprocessing pipeline
-
-### In Progress
-
-- 📋 Hyperparameter tuning on three categories
-- 📋 Final model training and evaluation
-- 📋 Report writing
-
----
-
-## 📊 Categories
-
-| Category                    | Users   | Items  | Interactions | Avg Seq Len |
-| --------------------------- | ------- | ------ | ------------ | ----------- |
-| `Industrial_and_Scientific` | 50,985  | 25,848 | 412,947      | 8.10        |
-| `Musical_Instruments`       | 57,439  | 24,587 | 511,836      | 8.91        |
-| `CDs_and_Vinyl`             | 123,876 | 89,370 | 1,552,764    | 12.53       |
-
----
-
-## 📁 Repository Layout
-
-```text
-.
-├── README.md                 # This file
-├── README_data.md            # Data documentation
-├── requirements.txt          # Python dependencies
-├── docs/                     # Documentation
-│   ├── DATA_DOWNLOAD.md
-│   ├── DATA_PREPROCESS.md
-│   ├── MODEL_TRAINING.md
-│   ├── EVALUATION.md
-│   ├── TEAM_HANDOFF.md
-│   └── GITHUB_COLLABORATION.md
-├── scripts/                  # Data processing scripts
-│   ├── download_amazon5core.py
-│   ├── check_raw_data.py
-│   ├── preprocess_to_seqrec.py
-│   └── check_processed_data.py
-├── models/                   # Model implementations
-│   └── seqrec/               # SeqRec model (SASRec-style)
-│       ├── model.py
-│       ├── dataset.py
-│       └── __init__.py
-├── train/                    # Training scripts
-│   └── train_seqrec.py
-├── evaluation/               # Evaluation scripts
-│   ├── metrics.py
-│   └── evaluate_topk.py
-├── configs/                  # Configuration files
-│   ├── seqrec_industrial.yaml
-│   ├── seqrec_musical.yaml
-│   ├── seqrec_cds.yaml
-│   └── seqrec_tiny.yaml
-├── results/                  # Results (tables and figures)
-│   ├── tables/
-│   └── figures/
-├── examples/                 # Example data
-│   └── tiny_sample/          # Tiny sample for testing
-└── data/                     # Data directories (local only)
-    ├── raw/                  # Raw data (ignored by Git)
-    └── processed/            # Processed data (ignored by Git)
-```
-
----
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-
-```powershell
-# Create conda environment (recommended)
-conda create -n seqrec python=3.10
-conda activate seqrec
-
-# Install dependencies
+```bash
+conda activate llmrec
+cd <本仓库根目录>
 pip install -r requirements.txt
 ```
 
-### 2. Prepare Data
+未激活环境时：`conda run -n llmrec python ...`。
 
-Place raw files under:
+---
 
-```text
-data/raw/Industrial_and_Scientific/
-data/raw/Musical_Instruments/
-data/raw/CDs_and_Vinyl/
+## 最短上手（已有 `data/processed/` 时）
+
+在**仓库根目录**依次执行：
+
+```bash
+python scripts/prepare_allmrec_amazon.py --overwrite
+python scripts/run_three_categories_sasrec.py --num_epochs 50 --device cuda:0 --batch_size 256 --n_workers 1 --eval_every 5 --plot
 ```
 
-Each category should contain:
+产出见 **`results/coursework/`**（`*_metrics.jsonl` + PNG）。`data/amazon/` 与上述结果**默认不纳入 Git**（见 `.gitignore`）。更细步骤、报告要写什么、参数表见 **[docs/EXPERIMENT_GUIDE.md](docs/EXPERIMENT_GUIDE.md)**。
 
-```text
-<category>.train.csv.gz
-<category>.valid.csv.gz
-<category>.test.csv.gz
-<category>.jsonl.gz
-meta_<category>.jsonl.gz
-```
+若尚无 `data/processed/`，需先有 `data/raw/<类别>/*.csv.gz`，再：
 
-### 3. Preprocess Data
-
-```powershell
-# Check raw data
-python scripts/check_raw_data.py
-
-# Preprocess all categories
-python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific --overwrite
-python scripts/preprocess_to_seqrec.py --categories Musical_Instruments --overwrite
-python scripts/preprocess_to_seqrec.py --categories CDs_and_Vinyl --overwrite
-
-# Check processed data
-python scripts/check_processed_data.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl
-```
-
-### 4. Train Model
-
-```powershell
-# Train on GPU
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_musical.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_cds.yaml --device cuda
-```
-
-### 5. Evaluate Model
-
-Training script automatically evaluates on test set. Results are saved to:
-
-```text
-train/seqrec_{category}_test_results.json
-results/tables/seqrec_{category}_test_results.json
+```bash
+python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl --overwrite
 ```
 
 ---
 
-## 🎯 Model Training
+## 训练 vs 验证：入口不要混
 
-### Training Commands
+| 做什么 | 命令入口 |
+|--------|----------|
+| **SASRec** 训练与验证/测试评估 | `python pre_train/sasrec/main.py ...`（支持 `--dataset`、`--skip_preprocess`、`--batch_size`） |
+| **A-LLMRec** | 根目录 `python main.py --pretrain_stage1 --rec_pre_trained_data ...`（**不要**带 `--dataset`） |
 
-```powershell
-# Train with default config
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml
+根目录误带 `--dataset` / `--skip_preprocess` 时会提示改用 SASRec 脚本。
 
-# Train with GPU
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
+### A-LLMRec（可选扩展）
 
-# Train with limited users (for quick test)
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda --max-users 1000
+需先在 `pre_train/sasrec/<类别>/` 保留**唯一** `.pth`。根目录示例：
+
+```bash
+python main.py --gpu_num 0 --pretrain_stage1 --rec_pre_trained_data Industrial_and_Scientific --num_epochs 10
 ```
 
-### Hyperparameters
-
-Key hyperparameters in `configs/*.yaml`:
-
-| Parameter             | Description                  | Default | Search Range        |
-| --------------------- | ---------------------------- | ------- | ------------------- |
-| `maxlen`              | Maximum sequence length      | 50      | 30, 50, 100         |
-| `hidden_units`        | Embedding dimension          | 64      | 64, 128, 256        |
-| `num_blocks`          | Number of Transformer blocks | 2       | 1, 2, 4             |
-| `num_heads`           | Number of attention heads    | 2       | 2, 4, 8             |
-| `dropout_rate`        | Dropout rate                 | 0.2     | 0.1, 0.2, 0.3       |
-| `learning_rate`       | Learning rate                | 0.001   | 0.0001, 0.001, 0.01 |
-| `batch_size`          | Batch size                   | 128     | 64, 128, 256        |
-| `num_epochs`          | Number of epochs             | 100     | 50, 100, 200        |
-| `early_stop_patience` | Early stopping patience      | 5       | 3, 5, 10            |
-| `seed`                | Random seed                  | 42      | 42, 123, 2024       |
-
-### Evaluation Metrics
-
-Training monitors the following metrics:
-
-- **NDCG@10** - Normalized Discounted Cumulative Gain (primary metric)
-- **HitRate@10** - Hit rate
-- **Recall@10** - Recall (same as HitRate@10 in single-target setting)
-- **MRR@10** - Mean Reciprocal Rank
-- **Precision@10** - Precision
-
-### Output Files
-
-After training:
-
-- `train/seqrec_{category}_best.pth` - Best model checkpoint
-- `train/seqrec_{category}_best_config.json` - Model configuration
-- `train/seqrec_{category}_test_results.json` - Test results
-- `results/tables/seqrec_{category}_test_results.json` - Test results (for report)
+Stage2 / 推理依赖大模型与显存，详见原论文与历史 README 说明；数据划分与 `COURSEWORK` 文档一致。
 
 ---
 
-## 📚 Documentation
+## 脚本与目录速查
 
-- [Data Download](docs/DATA_DOWNLOAD.md) - How to download raw data
-- [Data Preprocess](docs/DATA_PREPROCESS.md) - Data preprocessing pipeline
-- [Model Training](docs/MODEL_TRAINING.md) - Detailed training guide
-- [Evaluation](docs/EVALUATION.md) - Evaluation metrics and usage
-- [Team Handoff](docs/TEAM_HANDOFF.md) - Project status and task assignment
-- [GitHub Collaboration](docs/GITHUB_COLLABORATION.md) - Git workflow
+| 路径 | 作用 |
+|------|------|
+| `docs/EXPERIMENT_GUIDE.md` | 实验清单、速查命令、报告要点、`metrics` 字段 |
+| `docs/COURSEWORK_DATA_AND_EVAL.md` | 数据与指标定义 |
+| `scripts/preprocess_to_seqrec.py` | raw → `data/processed/` |
+| `scripts/prepare_allmrec_amazon.py` | → `data/amazon/` |
+| `scripts/run_three_categories_sasrec.py` | 三类别 SASRec + 可选 `--plot` |
+| `scripts/plot_coursework_metrics.py` | 从 jsonl 出图 |
+| `pre_train/sasrec/main.py` | 单类 SASRec |
+| `results/coursework/` | 指标与图（**默认不提交**，见 `.gitignore`；报告里可贴图或附表） |
 
----
-
-## ⚠️ Important Notes
-
-### Data Files
-
-- **Do not upload** full `data/raw/` and `data/processed/` directories to GitHub
-- These are large local data artifacts
-- Each team member should obtain data locally or through shared storage
-
-### Model Checkpoints
-
-- **Do not upload** model checkpoints (`.pth`, `.pt`, `.ckpt` files) to GitHub
-- Checkpoints should be saved locally or on shared storage
-- Only upload code, configs, docs, and lightweight results
-
-### Path Settings
-
-- Use **relative paths** in all scripts (e.g., `data/processed/`)
-- Do not write **absolute paths** (e.g., `D:\data\processed\`)
+**Git 策略**：`data/raw/`、`data/processed/`、`data/amazon/`、`**/*.pth`、`**/*.pt`、`results/**` 等均为忽略项，仓库只保留脚本与文档；克隆后请本地跑 `preprocess` / `prepare_allmrec_amazon` / 训练生成数据与指标。
 
 ---
 
-## 🛠️ Development
+## 依赖与排错（摘要）
 
-### Running Tests
+- `huggingface_hub<0.26`：兼容 A-LLMRec 的 `sentence-transformers==2.2.2`；仅跑 SASRec 若报错也可 `pip install -r requirements.txt`。
+- `transformers` 的 `FutureWarning` 可忽略。
 
-```powershell
-# Test data loading
-python -m train.check_data_loading
-
-# Test full pipeline
-python test_project.py
-```
-
-### Code Style
-
-- Follow PEP 8 style guide
-- Add docstrings to classes and functions
-- Use type hints where appropriate
+更多排错表：**[docs/EXPERIMENT_GUIDE.md](docs/EXPERIMENT_GUIDE.md#常见问题排错)**。
 
 ---
 
-## 📅 Timeline
+## 引用（A-LLMRec）
 
-| Phase                 | Status         | Deadline     |
-| --------------------- | -------------- | ------------ |
-| Data Preprocessing    | ✅ Completed   | -            |
-| Model Implementation  | ✅ Completed   | -            |
-| Training & Tuning     | 📋 In Progress | -            |
-| Evaluation & Analysis | 📋 Pending     | -            |
-| Report Writing        | 📋 Pending     | May 18, 2026 |
-
----
-
-## 👥 Team
-
-See [Team Handoff](docs/TEAM_HANDOFF.md) for task assignment and project status.
-
----
-
-## 📖 Citation
-
-SASRec Paper:
-
-```
-@inproceedings{kang2018self,
-  title={Self-attentive sequential recommendation},
-  author={Kang, Wang-Cheng and McAuley, Julian},
-  booktitle={2018 IEEE International Conference on Data Mining (ICDM)},
-  pages={197--206},
-  year={2018},
-  organization={IEEE}
+```bibtex
+@inproceedings{chiang2024allmrec,
+  title={Large Language Models meet Collaborative Filtering: An Efficient All-round LLM-based Recommender System},
+  author={Chiang, Wei-Yao and others},
+  booktitle={KDD},
+  year={2024}
 }
 ```
-
----
-
-_Last Updated: May 9, 2026_

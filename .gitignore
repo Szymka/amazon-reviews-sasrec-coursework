@@ -29,6 +29,9 @@ data/raw/**
 data/processed/**
 !data/processed/**/.gitkeep
 
+# RecBole export for LLMRank Rank (regenerate from processed/)
+data/recbole_llmrank/**
+
 # Ship tiny fixtures with the repo
 !examples/tiny_sample/**
 
@@ -97,6 +100,9 @@ evaluation/*_test_results.json
 results/**
 !results/**/
 !results/**/.gitkeep
+
+# OpenAI / LLMRank Rank secrets (copy from configs/llmrank_recbole/openai_api.yaml.example)
+secrets/
 
 # Jupyter checkpoint sidecars
 .ipynb_checkpoints/

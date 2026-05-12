@@ -1,0 +1,11 @@
+# Full LLMRank (RecBole + Rank + OpenAI) path used by scripts/run_llmrank_recbole_rank.py
+# Install inside conda env llmrec (Python 3.10 recommended):
+#   pip install -r requirements.txt -r requirements-llmrank-recbole.txt
+#
+# Upstream LLMRank pins recbole==1.1.1 / openai==0.27.x; newer torch usually works.
+
+recbole==1.1.1
+openai==0.28.1
+aiohttp>=3.8.0
+pylcs
+replicate

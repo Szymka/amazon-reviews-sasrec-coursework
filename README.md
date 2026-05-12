@@ -1,6 +1,9 @@
 # Amazon Reviews 2023 Recommendation System Coursework
 
-Team coursework scaffold: Amazon Reviews 2023 5-Core → processed sequential splits under `data/processed/`, trained with the **LLMRank** sequential backbone (PyTorch, no RecBole).
+Team coursework scaffold: Amazon Reviews 2023 5-Core → processed sequential splits under `data/processed/`. Two tracks:
+
+1. **Lightweight PyTorch backbone** (no RecBole): `train/train_llmrank.py` + `models/llmrank/`.
+2. **Full upstream LLMRank Rank** (RecBole + OpenAI API, zero-shot reranking): `scripts/run_llmrank_recbole_rank.py` + sibling repo `../LLMRank/llmrank` (see below).
 
 ---
 
@@ -42,9 +45,34 @@ Per user, sequence by time: **[i₁, …, i_N]** (item ids 1…`num_items`, **0*
 
 Metrics: **NDCG@K** and **HitRate@K** with **K = `topk`** in the YAML (default 10), computed in `evaluation/metrics.py` over full-vocabulary scores.
 
-### Model (LLMRank backbone)
+### Model (two tracks)
 
-Upstream [LLMRank](https://github.com/RUCAIBox/LLMRank) couples an LLM ranker with a sequential candidate generator. This repo ships the **trainable causal Transformer backbone** only: `CourseworkSequenceDataset` maps TSV columns `seq_ids` / `target_id` to `input_ids` / `target_id`. The optional LLM **Rank** stage (API + RecBole) is **not** wired here.
+- **PyTorch backbone** (default for coursework training): `CourseworkSequenceDataset` + `models/llmrank/model/sasrec.py`, `train/train_llmrank.py`.
+- **Full LLMRank Rank** (ECIR 2024): uses the official [LLMRank](https://github.com/RUCAIBox/LLMRank) code under `../LLMRank/llmrank` with **RecBole** `SequentialDataset` and **OpenAI** calls in `model/rank.py`. There is **no gradient training** of Rank; metrics come from zero-shot LLM reranking over a candidate list (same idea as upstream `python evaluate.py -m Rank`).
+
+#### Full LLMRank + RecBole + API (optional)
+
+1. Keep the upstream repo next to this coursework folder: `code/LLMRank/llmrank/...` (clone [LLMRank](https://github.com/RUCAIBox/LLMRank) if missing).
+2. Install extra deps (Python 3.10 recommended):
+
+   ```powershell
+   conda activate llmrec
+   pip install -r requirements.txt -r requirements-llmrank-recbole.txt
+   ```
+
+3. Copy `configs/llmrank_recbole/openai_api.yaml.example` to `secrets/openai_api.yaml` and set `api_key` (and optional `api_base` for compatible proxies).
+
+4. Export RecBole atomic files + test-split candidate file, then run evaluation (costs API money):
+
+   ```powershell
+   conda activate llmrec
+   cd amazon-reviews-sasrec-coursework
+   python scripts/run_llmrank_recbole_rank.py --category Industrial_and_Scientific --prepare --num-eval-users 200 --device cuda
+   ```
+
+   Omit `--prepare` on later runs if `data/recbole_llmrank/<category>/` is already built.
+
+**Is the full pipeline “better”?** It answers a different question (LLM zero-shot ranking with a fixed candidate set) than supervised training of the small Transformer. Expect **high latency and API cost**; metrics are not directly comparable to `train/train_llmrank.py` full-vocab NDCG without the same candidate protocol.
 
 ---
 
@@ -55,14 +83,17 @@ Upstream [LLMRank](https://github.com/RUCAIBox/LLMRank) couples an LLM ranker wi
 ├── README.md
 ├── README_data.md
 ├── requirements.txt
-├── requirements-llmrec.txt   # conda env llmrec (torch + pandas + tqdm)
+├── requirements-llmrec.txt
+├── requirements-llmrank-recbole.txt  # RecBole + openai for full LLMRank Rank
 ├── docs/
 ├── scripts/
 │   ├── download_amazon5core.py
 │   ├── check_raw_data.py
 │   ├── preprocess_to_seqrec.py
 │   ├── check_processed_data.py
-│   └── test_project.py
+│   ├── test_project.py
+│   └── run_llmrank_recbole_rank.py   # RecBole + LLMRank Rank + API
+├── llmrank_recbole/          # RecBole export + LLMRank Rank helpers
 ├── models/llmrank/
 │   ├── dataset.py
 │   └── model/
@@ -75,7 +106,8 @@ Upstream [LLMRank](https://github.com/RUCAIBox/LLMRank) couples an LLM ranker wi
 │   ├── llmrank_industrial.yaml
 │   ├── llmrank_musical.yaml
 │   ├── llmrank_cds.yaml
-│   └── llmrank_tiny.yaml
+│   ├── llmrank_tiny.yaml
+│   └── llmrank_recbole/      # RecBole + OpenAI templates for Rank
 ├── results/
 ├── examples/tiny_sample/
 └── data/
@@ -93,6 +125,8 @@ Upstream [LLMRank](https://github.com/RUCAIBox/LLMRank) couples an LLM ranker wi
 conda create -n llmrec python=3.10 -y
 conda activate llmrec
 pip install -r requirements-llmrec.txt
+# optional: full LLMRank Rank (RecBole + OpenAI)
+# pip install -r requirements-llmrank-recbole.txt
 ```
 
 ### 2. Data

@@ -79,3 +79,12 @@
 ## A-LLMRec（根目录 `main.py`）
 
 在 SASRec 训练完成且 `pre_train/sasrec/<类别>/` 下仅保留一个 `.pth` 后，可在根目录按 README 进行 Stage1 / Stage2；其数据划分与上文相同（同样读取 `data/amazon/<类别>.txt`）。
+
+---
+
+## 延伸阅读（给写报告、做实验的同学）
+
+- **[EXPERIMENT_GUIDE.md](EXPERIMENT_GUIDE.md)**：实验前检查清单、一键命令、参数表、`metrics` 各字段、报告章节提示、常见问题。  
+- **[README.md](../README.md)**：仓库入口、最短上手、脚本索引。
+
+写「实验设置」时可从本页摘录：**5-Core**、**N−2/N−1/N**、**NDCG@10 / HR@10**（101 候选、前 10 命中）、**eval 子采样 10000 用户**（若适用）。写「复现」时请记录：`--eval_seed`、`--eval_num_negatives`、`--eval_every`、`--num_epochs`、硬件与 `llmrec` 中 `torch` 版本。

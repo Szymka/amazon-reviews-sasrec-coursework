@@ -1,5 +1,6 @@
-# --- Track: code, configs, docs, examples/tiny_sample, .gitkeep placeholders ---
-# --- Do not commit: full raw/processed data, checkpoints, trackers, logs, bulky exports ---
+# --- 策略：不提交完整 raw/processed、不提交由脚本生成的大体积数据与权重 ---
+# --- 仅跟踪：源码、文档、小体积占位 .gitkeep、（可选）极小示例 ---
+# --- Do not commit: full raw/processed, prepared amazon flat files, checkpoints, bulky exports ---
 
 # Python
 __pycache__/
@@ -23,21 +24,19 @@ env/
 .env
 .env.*
 
-# Local datasets (keep only .gitkeep under raw/processed, any depth)
-data/raw/**
-!data/raw/**/.gitkeep
-data/processed/**
-!data/processed/**/.gitkeep
+# 原始与预处理完整数据（仅保留目录下 .gitkeep）
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 
-# A-LLMRec / SASRec outputs
+# 由 prepare_allmrec_amazon 生成的扁平交互与文本字典（体积大，一律本地生成）
+data/amazon/*
+!data/amazon/.gitkeep
+
+# A-LLMRec / SASRec 权重与推理输出
 models/saved_models/
 recommendation_output.txt
-
-# Prepared flat files for A-LLMRec (optional to version)
-!data/amazon/
-!data/amazon/.gitkeep
-!data/amazon/*.txt
-!data/amazon/*_text_name_dict.json.gz
 
 # Ship tiny fixtures with the repo
 !examples/tiny_sample/**
@@ -71,7 +70,7 @@ examples/tiny_sample/**/wandb/
 *.7z
 *.rar
 
-# Model weights (Python source remains tracked)
+# Model weights & large binaries
 checkpoints/
 checkpoint/
 **/*.pt
@@ -99,10 +98,12 @@ logs/
 **/*.log
 *.log
 
-# Empty layout only: add .gitkeep under results/ if you want the tree
-results/**
-!results/**/
-!results/**/.gitkeep
+# 训练指标与图表（不提交；需保留目录占位时可提交 .gitkeep）
+results/*
+!results/.gitkeep
+!results/coursework/
+results/coursework/*
+!results/coursework/.gitkeep
 
 # Jupyter checkpoint sidecars
 .ipynb_checkpoints/
@@ -117,13 +118,3 @@ Thumbs.db
 
 # Placeholder files
 !.gitkeep
-
-# A-LLMRec text dict uses .json.gz suffix but is pickle; un-ignore after generic *.json.gz
-!data/amazon/*_text_name_dict.json.gz
-
-# SASRec checkpoints used by A-LLMRec RecSys loader
-!pre_train/sasrec/**/*.pth
-
-# 课程实验：metrics jsonl 与图表（可选纳入版本库）
-!results/coursework/
-!results/coursework/**

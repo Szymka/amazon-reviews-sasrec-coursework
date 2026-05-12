@@ -1,12 +1,16 @@
 # Amazon 顺序推荐（5-Core）· SASRec / A-LLMRec
 
-本仓库面向 **Amazon Reviews 2023 5-Core** 下三个类别：**Industrial_and_Scientific**、**Musical_Instruments**、**CDs_and_Vinyl**。数据划分、TSV 字段与 **NDCG@10 / HR@10** 评估方式见 **[docs/COURSEWORK_DATA_AND_EVAL.md](docs/COURSEWORK_DATA_AND_EVAL.md)**（建议先读）。
+三类数据：**Industrial_and_Scientific**、**Musical_Instruments**、**CDs_and_Vinyl**（Amazon Reviews 2023 **5-Core**）。
+
+| 你想… | 打开 |
+|--------|------|
+| **按清单训练、验证、写报告、查命令** | **[docs/EXPERIMENT_GUIDE.md](docs/EXPERIMENT_GUIDE.md)**（推荐先看） |
+| 核对 **N−2/N−1/N**、TSV 字段、NDCG@10 与代码 | [docs/COURSEWORK_DATA_AND_EVAL.md](docs/COURSEWORK_DATA_AND_EVAL.md) |
+| 文档索引 | [docs/README.md](docs/README.md) |
 
 ---
 
-## 环境与 conda
-
-在 **`llmrec`** conda 环境中操作：
+## 环境与 conda（全体统一）
 
 ```bash
 conda activate llmrec
@@ -14,112 +18,73 @@ cd <本仓库根目录>
 pip install -r requirements.txt
 ```
 
-非交互式：
-
-```bash
-conda run -n llmrec pip install -r requirements.txt
-```
+未激活环境时：`conda run -n llmrec python ...`。
 
 ---
 
-## 数据划分（摘要）
+## 最短上手（已有 `data/processed/` 时）
 
-对每个用户，按时间的完整交互序列长度为 **N**：
-
-| 子集 | 内容 |
-|------|------|
-| 训练 | 前 **N−2** 个交互 |
-| 验证 | 第 **N−1** 个交互（`dev.tsv` / 官方 valid） |
-| 测试 | 第 **N** 个交互（`test.tsv` / 官方 test） |
-
-`train.tsv` / `dev.tsv` / `test.tsv` 含 **`user_id_int`（用户）**、**`target_id` / `raw_parent_asin`（商品）**、**`rating`、`timestamp`**、**`seq_ids`（history 对应的整数序列）**、**`raw_user_id`** 等，语义为：用户在对 **history** 中最后一个商品交互之后，又对当前行的 **parent_asin** 产生交互；验证/测试即根据 history **预测该 parent_asin**。
-
-由 `scripts/preprocess_to_seqrec.py` 从 `data/raw/<类别>/` 生成 `data/processed/<类别>/`；**5-Core** 保证用户与商品交互次数下限，减轻稀疏。
-
----
-
-## 推荐流程（训练 → 验证 / 测试）
-
-以下均在**仓库根目录**执行（除非注明）。
-
-### 0）准备 processed 与 `data/amazon/`（首次或更新数据后）
+在**仓库根目录**依次执行：
 
 ```bash
-# 若尚无 processed，需先放入官方 gzip 再执行：
-python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl --overwrite
-
-# 生成 SASRec / A-LLMRec 共用的 user-item 行文件：
 python scripts/prepare_allmrec_amazon.py --overwrite
+python scripts/run_three_categories_sasrec.py --num_epochs 50 --device cuda:0 --batch_size 256 --n_workers 1 --eval_every 5 --plot
 ```
 
-### 1）训练（SASRec）
+产出见 **`results/coursework/`**（`*_metrics.jsonl` + PNG）。`data/amazon/` 与上述结果**默认不纳入 Git**（见 `.gitignore`）。更细步骤、报告要写什么、参数表见 **[docs/EXPERIMENT_GUIDE.md](docs/EXPERIMENT_GUIDE.md)**。
 
-**入口必须是** `pre_train/sasrec/main.py`（**不要**用根目录 `main.py` 跑 `--dataset`，那是 A-LLMRec）。
-
-单类别示例（训练集上 BCE；按 `--eval_every` 在**验证集 + 测试集**上算 **NDCG@10、HR@10**，候选为 1 正 + 100 负，可 `--eval_num_negatives` 调整）：
+若尚无 `data/processed/`，需先有 `data/raw/<类别>/*.csv.gz`，再：
 
 ```bash
-python pre_train/sasrec/main.py ^
-  --dataset Industrial_and_Scientific ^
-  --skip_preprocess ^
-  --device cuda:0 ^
-  --num_epochs 200 ^
-  --batch_size 128 ^
-  --n_workers 1 ^
-  --eval_every 20 ^
-  --metrics_jsonl results/coursework/Industrial_and_Scientific_metrics.jsonl
+python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl --overwrite
 ```
-
-（Linux/macOS 将 `^` 换为行末 `\`。）
-
-**三类别顺序训练并写指标、可选自动画图：**
-
-```bash
-python scripts/run_three_categories_sasrec.py --num_epochs 5 --device cuda:0 --batch_size 256 --n_workers 1 --eval_every 1 --plot
-```
-
-仅根据已有 `*_metrics.jsonl` 出图：
-
-```bash
-python scripts/plot_coursework_metrics.py --metrics_dir results/coursework
-```
-
-默认输出：`results/coursework/metrics_curves_ndcg_hr.png`（各 epoch 曲线）、`final_test_ndcg10_hr10_bar.png`（最后一轮测试集对比）。
-
-### 2）验证 / 测试在代码中的对应关系
-
-- **验证集指标**：用 **训练前缀** 构造序列，预测 **第 N−1 个物品**（与 `dev.tsv` 目标一致）。
-- **测试集指标**：用 **训练前缀 + 验证物品** 构造序列，预测 **第 N 个物品**（与 `test.tsv` 目标一致）。
-- 指标含义见 `docs/COURSEWORK_DATA_AND_EVAL.md`（随机负采样、用户子采样规则等）。
-
-### 3）A-LLMRec（可选）
-
-根目录 `main.py` 为 **A-LLMRec**（`--pretrain_stage1`、`--rec_pre_trained_data`、`--gpu_num` 等）。需先在 `pre_train/sasrec/<类别>/` 下保留**唯一** SASRec `.pth`。详见原论文流程；数据划分与上表一致。
-
-若根目录命令误含 `--dataset` / `--skip_preprocess`，脚本会提示改用 SASRec 入口。
 
 ---
 
-## 常用路径
+## 训练 vs 验证：入口不要混
+
+| 做什么 | 命令入口 |
+|--------|----------|
+| **SASRec** 训练与验证/测试评估 | `python pre_train/sasrec/main.py ...`（支持 `--dataset`、`--skip_preprocess`、`--batch_size`） |
+| **A-LLMRec** | 根目录 `python main.py --pretrain_stage1 --rec_pre_trained_data ...`（**不要**带 `--dataset`） |
+
+根目录误带 `--dataset` / `--skip_preprocess` 时会提示改用 SASRec 脚本。
+
+### A-LLMRec（可选扩展）
+
+需先在 `pre_train/sasrec/<类别>/` 保留**唯一** `.pth`。根目录示例：
+
+```bash
+python main.py --gpu_num 0 --pretrain_stage1 --rec_pre_trained_data Industrial_and_Scientific --num_epochs 10
+```
+
+Stage2 / 推理依赖大模型与显存，详见原论文与历史 README 说明；数据划分与 `COURSEWORK` 文档一致。
+
+---
+
+## 脚本与目录速查
 
 | 路径 | 作用 |
 |------|------|
-| `docs/COURSEWORK_DATA_AND_EVAL.md` | 划分、字段、NDCG@10、操作顺序 |
-| `scripts/preprocess_to_seqrec.py` | raw gzip → `data/processed/` |
+| `docs/EXPERIMENT_GUIDE.md` | 实验清单、速查命令、报告要点、`metrics` 字段 |
+| `docs/COURSEWORK_DATA_AND_EVAL.md` | 数据与指标定义 |
+| `scripts/preprocess_to_seqrec.py` | raw → `data/processed/` |
 | `scripts/prepare_allmrec_amazon.py` | → `data/amazon/` |
-| `scripts/run_three_categories_sasrec.py` | 三类别 SASRec + metrics |
-| `scripts/plot_coursework_metrics.py` | 评估可视化 |
-| `pre_train/sasrec/main.py` | SASRec 训练与评估 |
-| `data/processed/<类别>/` | TSV、映射、`sasrec_interactions.txt` |
-| `data/amazon/` | 扁平交互，供 SASRec `--skip_preprocess` |
-| `results/coursework/` | `*_metrics.jsonl` 与 PNG |
+| `scripts/run_three_categories_sasrec.py` | 三类别 SASRec + 可选 `--plot` |
+| `scripts/plot_coursework_metrics.py` | 从 jsonl 出图 |
+| `pre_train/sasrec/main.py` | 单类 SASRec |
+| `results/coursework/` | 指标与图（**默认不提交**，见 `.gitignore`；报告里可贴图或附表） |
+
+**Git 策略**：`data/raw/`、`data/processed/`、`data/amazon/`、`**/*.pth`、`**/*.pt`、`results/**` 等均为忽略项，仓库只保留脚本与文档；克隆后请本地跑 `preprocess` / `prepare_allmrec_amazon` / 训练生成数据与指标。
 
 ---
 
-## 依赖与排错
+## 依赖与排错（摘要）
 
-- `requirements.txt` 含 `huggingface_hub<0.26` 以兼容 `sentence-transformers==2.2.2`（A-LLMRec Stage1）。若遇 `cached_download` 报错：`pip install -r requirements.txt`。
-- `transformers` 与 PyTorch 的 `FutureWarning` 可忽略。
+- `huggingface_hub<0.26`：兼容 A-LLMRec 的 `sentence-transformers==2.2.2`；仅跑 SASRec 若报错也可 `pip install -r requirements.txt`。
+- `transformers` 的 `FutureWarning` 可忽略。
+
+更多排错表：**[docs/EXPERIMENT_GUIDE.md](docs/EXPERIMENT_GUIDE.md#常见问题排错)**。
 
 ---
 

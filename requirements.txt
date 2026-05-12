@@ -3,5 +3,5 @@ Requests==2.33.1
 torch==2.8.0
 tqdm==4.67.1
 
-# Optional: A-LLMRec / conda env "llmrec" — transformers, sentence-transformers, pinned torch stack
+# Optional: conda env "llmrec" for LLMRank backbone training (torch + pandas + tqdm)
 # pip install -r requirements-llmrec.txt

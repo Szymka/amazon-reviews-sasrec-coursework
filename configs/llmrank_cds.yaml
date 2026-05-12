@@ -1,20 +1,17 @@
+# LLMRank sequential backbone — CDs_and_Vinyl.
 category: CDs_and_Vinyl
 processed_dir: data/processed/CDs_and_Vinyl
 train_file: data/processed/CDs_and_Vinyl/train.tsv
 dev_file: data/processed/CDs_and_Vinyl/dev.tsv
 test_file: data/processed/CDs_and_Vinyl/test.tsv
-sequence_file: data/processed/CDs_and_Vinyl/seqrec_sequence.txt
-interactions_file: data/processed/CDs_and_Vinyl/seqrec_interactions.txt
 stats_file: data/processed/CDs_and_Vinyl/stats.json
 
-model_name: GRUSeqRec
 maxlen: 50
 hidden_units: 128
-gru_num_layers: 2
 num_blocks: 2
 num_heads: 2
 dropout_rate: 0.2
-learning_rate: 0.002
+learning_rate: 0.001
 weight_decay: 0.0001
 train_loss_mode: sampled
 num_sampled_negatives: 512

@@ -27,7 +27,7 @@
   - 训练集：前 N-2 个交互
   - 验证集：第 N-1 个交互
   - 测试集：第 N 个交互（最后一个）
-- ✅ **格式转换**：将数据转换为 SASRec 所需格式
+- ✅ **格式转换**：将数据转换为 coursework 顺序推荐（LLMRank）可用的 TSV 与映射文件
 
 ### 2. 数据加载验证
 
@@ -40,7 +40,7 @@
 - ✅ **超参数配置**：支持调整嵌入维度、注意力头数、dropout 率等
 - ✅ **多数据集切换**：通过 `--config` 参数支持切换不同类别
 - ✅ **早停机制**：监控验证集 NDCG@10，连续无提升时自动停止
-- ✅ **模型保存**：自动保存最佳模型到 `train/seqrec_{category}_best.pth`
+- ✅ **模型保存**：自动保存最佳模型到 `train/llmrank_{category}_best.pth`
 - ✅ **NDCG@10 评估**：添加评估函数，计算 HitRate@10、NDCG@10、Recall@10、MRR@10、Precision@10
 
 ---
@@ -69,7 +69,7 @@
 train.tsv          # 训练集
 dev.tsv            # 验证集
 test.tsv           # 测试集
-seqrec_sequence.txt # SASRec格式序列
+seqrec_sequence.txt # 每条用户整条序列导出（文件名历史沿用）
 seqrec_interactions.txt # 交互数据
 user2id.json       # 用户ID映射
 id2user.json       # 用户ID反向映射
@@ -97,9 +97,9 @@ stats.json         # 统计信息
 
 ```powershell
 # 训练单个类别
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_musical.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_cds.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_musical.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_cds.yaml --device cuda
 ```
 
 #### 超参数搜索范围建议
@@ -151,7 +151,7 @@ results/figures/    # 图表结果（PNG/PDF）
 | 任务 | 说明                                                              |
 | ---- | ----------------------------------------------------------------- |
 | 6.①  | 撰写问题定义、数据集描述、数据划分方法                            |
-| 6.②  | 详细描述 SASRec 模型结构（嵌入、自注意力、掩码、FFN等，引用论文） |
+| 6.②  | 详细描述顺序 Transformer / LLMRank coursework 主干（嵌入、因果自注意力、FFN） |
 | 6.③  | 实验设置（超参数表格、训练细节、硬件环境）                        |
 | 6.④  | 实验结果分析（三个类别 NDCG@10 表格）                             |
 | 6.⑤  | 参考文献引用                                                      |
@@ -177,8 +177,8 @@ results/figures/    # 图表结果（PNG/PDF）
 | 目录                    | 说明                       |
 | ----------------------- | -------------------------- |
 | `scripts/`              | 数据下载、检查、预处理脚本 |
-| `configs/`              | SASRec 实验配置文件        |
-| `models/seqrec/`        | SASRec 模型实现            |
+| `configs/`              | 实验配置文件（`llmrank_*.yaml`） |
+| `models/llmrank/`        | LLMRank coursework 顺序模型            |
 | `train/`                | 训练脚本和模型检查点       |
 | `evaluation/`           | 评估指标和评估脚本         |
 | `results/tables/`       | 结果表格                   |

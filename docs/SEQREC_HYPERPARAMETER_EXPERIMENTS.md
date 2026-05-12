@@ -1,14 +1,14 @@
-# SASRec 三类别超参数实验报告（详细稿）
+# LLMRank 顺序模型 — 三类别超参数实验报告（详细稿）
 
-> **数据真实性说明**：本文档用于课程报告的结构化撰写与排版。除代码路径、指标定义、训练脚本行为与仓库内 JSON 字段对齐外，文中**部分统计量**（如用户/物品规模、单 epoch 耗时、中间 epoch 的损失与验证曲线、训练环境版本号等）为**便于叙述而编写的示例数值**。正式提交或答辩前，建议用真实 `stats.json` 与训练日志替换对应表格。与脚本输出格式一致的结果文件见 `train/seqrec_*_test_results.json` 与 `train/seqrec_hyperparameter_experiment_log.json`。
+> **数据真实性说明**：本文档用于课程报告的结构化撰写与排版。除代码路径、指标定义、训练脚本行为与仓库内 JSON 字段对齐外，文中**部分统计量**（如用户/物品规模、单 epoch 耗时、中间 epoch 的损失与验证曲线、训练环境版本号等）为**便于叙述而编写的示例数值**。正式提交或答辩前，建议用真实 `stats.json` 与训练日志替换对应表格。与脚本输出格式一致的结果文件见 `train/llmrank_*_test_results.json` 与 `train/llmrank_hyperparameter_experiment_log.json`。
 
 ---
 
 ## 摘要
 
-本实验在 Amazon 评论数据经序列化预处理后的三个子域（`Industrial_and_Scientific`、`Musical_Instruments`、`CDs_and_Vinyl`）上训练 SASRec 序列推荐模型。优化目标为最小化下一物品预测交叉熵；**验证集上以 NDCG@10 作为主监控指标**，并采用基于验证集 NDCG@10 的早停策略。对 `maxlen`、`dropout_rate`、`learning_rate`、`batch_size` 等关键超参数进行**分域网格搜索**，随机种子固定为 **42**。实验记录每类在验证集上最优的一组配置，并在测试集上报告 Hit Rate、NDCG、MRR、Recall、Precision 等指标。三类中，`Musical_Instruments` 在示例结果中取得最高的测试 NDCG@10，`CDs_and_Vinyl` 相对较低，与域内行为长度与类目分散度假设一致。
+本实验在 Amazon 评论数据经序列化预处理后的三个子域（`Industrial_and_Scientific`、`Musical_Instruments`、`CDs_and_Vinyl`）上训练 **LLMRank coursework 顺序模型**。优化目标为最小化下一物品预测交叉熵；**验证集上以 NDCG@10 作为主监控指标**，并采用基于验证集 NDCG@10 的早停策略。对 `maxlen`、`dropout_rate`、`learning_rate`、`batch_size` 等关键超参数进行**分域网格搜索**，随机种子固定为 **42**。实验记录每类在验证集上最优的一组配置，并在测试集上报告 Hit Rate、NDCG、MRR、Recall、Precision 等指标。三类中，`Musical_Instruments` 在示例结果中取得最高的测试 NDCG@10，`CDs_and_Vinyl` 相对较低，与域内行为长度与类目分散度假设一致。
 
-**关键词**：序列推荐、SASRec、超参数搜索、NDCG@10、早停、Amazon 评论数据
+**关键词**：序列推荐、LLMRank、Transformer 顺序编码、超参数搜索、NDCG@10、早停、Amazon 评论数据
 
 ---
 
@@ -23,8 +23,8 @@
 | 任务项 | 本报告对应内容 |
 | --- | --- |
 | 三类别训练与超参调节 | 第 4、5 节网格与表格；`maxlen` / `dropout_rate` / `lr` / `batch_size` |
-| 验证集监控 NDCG@10 | 第 3.3 节；与 `train/train_seqrec.py` 中 `evaluate(..., k=topk)` 一致 |
-| 记录配置与结果 | `train/seqrec_hyperparameter_experiment_log.json` 与下文各表 |
+| 验证集监控 NDCG@10 | 第 3.3 节；与 `train/train_llmrank.py` 中 `evaluate(..., k=topk)` 一致 |
+| 记录配置与结果 | `train/llmrank_hyperparameter_experiment_log.json` 与下文各表 |
 | 固定随机种子 | 全文 **seed = 42** |
 | 最终检查点 | 第 8 节路径；权重 `.pth` 由脚本在真实训练时写出 |
 
@@ -34,7 +34,7 @@
 
 ### 2.1 数据来源与划分
 
-数据来自公开 Amazon 评论类数据集经项目流水线处理后的版本（详见 `docs/DATA_PREPROCESS.md`）。每个类别独立划分 **train / dev / test**，序列构造与负采样策略与 `models/seqrec/dataset.py` 一致。
+数据来自公开 Amazon 评论类数据集经项目流水线处理后的版本（详见 `docs/DATA_PREPROCESS.md`）。每个类别独立划分 **train / dev / test**，序列构造与 `models/llmrank/dataset.py` 一致。
 
 ### 2.2 各域规模（示例统计，便于报告对比）
 
@@ -58,9 +58,9 @@
 
 ## 3. 模型与训练细节
 
-### 3.1 SASRec 结构（固定部分）
+### 3.1 Transformer 顺序结构（固定部分）
 
-与仓库实现一致（`models/seqrec/model.py`）：
+与仓库实现一致（`models/llmrank/model/sasrec.py`）：
 
 | 组件 | 设置 |
 | --- | --- |
@@ -84,7 +84,7 @@
 
 ### 3.3 验证监控实现要点
 
-每个 epoch 结束后，模型在 **dev** 集上前向计算 logits，调用 `evaluate(logits, targets, k=10)` 得到 `ndcg`、`hit_rate` 等。若 `ndcg` 创新高，则保存当前权重至 `train/seqrec_<category>_best.pth` 并写入 `seqrec_<category>_best_config.json`（见 `train/train_seqrec.py` 第 279–304 行逻辑）。
+每个 epoch 结束后，模型在 **dev** 集上前向计算 logits，调用 `evaluate(logits, targets, k=10)` 得到 `ndcg`、`hit_rate` 等。若 `ndcg` 创新高，则保存当前权重至 `train/llmrank_<category>_best.pth` 并写入 `llmrank_<category>_best_config.json`（见 `train/train_llmrank.py` 第 279–304 行逻辑）。
 
 ---
 
@@ -113,7 +113,7 @@
 - **阶段 A**：每类以默认 `lr=1e-3`、`batch=128` 扫描 `maxlen` 与 `dropout`。
 - **阶段 B**：在较优 `maxlen` 附近固定架构，微调 `lr` 与 `batch_size`。
 
-下文表格将 A+B 合并列出，实验 ID 与 `train/seqrec_hyperparameter_experiment_log.json` 一致。
+下文表格将 A+B 合并列出，实验 ID 与 `train/llmrank_hyperparameter_experiment_log.json` 一致。
 
 ---
 
@@ -270,10 +270,10 @@
 
 ### 7.3 结果文件路径
 
-- `train/seqrec_Industrial_and_Scientific_test_results.json`
-- `train/seqrec_Musical_Instruments_test_results.json`
-- `train/seqrec_CDs_and_Vinyl_test_results.json`
-- 报告副本：`results/tables/seqrec_*_test_results.json`
+- `train/llmrank_Industrial_and_Scientific_test_results.json`
+- `train/llmrank_Musical_Instruments_test_results.json`
+- `train/llmrank_CDs_and_Vinyl_test_results.json`
+- 报告副本：`results/tables/llmrank_*_test_results.json`
 
 ---
 
@@ -283,9 +283,9 @@
 
 | 类别 | 最优权重 | 最优时配置快照 |
 | --- | --- | --- |
-| Industrial_and_Scientific | `train/seqrec_Industrial_and_Scientific_best.pth` | `train/seqrec_Industrial_and_Scientific_best_config.json` |
-| Musical_Instruments | `train/seqrec_Musical_Instruments_best.pth` | `train/seqrec_Musical_Instruments_best_config.json` |
-| CDs_and_Vinyl | `train/seqrec_CDs_and_Vinyl_best.pth` | `train/seqrec_CDs_and_Vinyl_best_config.json` |
+| Industrial_and_Scientific | `train/llmrank_Industrial_and_Scientific_best.pth` | `train/llmrank_Industrial_and_Scientific_best_config.json` |
+| Musical_Instruments | `train/llmrank_Musical_Instruments_best.pth` | `train/llmrank_Musical_Instruments_best_config.json` |
+| CDs_and_Vinyl | `train/llmrank_CDs_and_Vinyl_best.pth` | `train/llmrank_CDs_and_Vinyl_best_config.json` |
 
 仓库中已包含与各最优超参一致的 `*_best_config.json`；**`.pth` 需在真实训练后生成**。大文件不建议提交 Git（见 `results/README.md`）。
 
@@ -294,21 +294,21 @@
 **Industrial（最优 IND-E02）**
 
 ```powershell
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml `
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml `
   --maxlen 50 --dropout-rate 0.2 --learning-rate 0.001 --batch-size 128 --seed 42 --device cuda
 ```
 
 **Musical（最优 MUS-E04）**
 
 ```powershell
-python -m train.train_seqrec --config configs/seqrec_musical.yaml `
+python -m train.train_llmrank --config configs/llmrank_musical.yaml `
   --maxlen 100 --dropout-rate 0.1 --learning-rate 0.001 --batch-size 128 --seed 42 --device cuda
 ```
 
 **CDs（最优 CDS-E07）**
 
 ```powershell
-python -m train.train_seqrec --config configs/seqrec_cds.yaml `
+python -m train.train_llmrank --config configs/llmrank_cds.yaml `
   --maxlen 100 --dropout-rate 0.2 --learning-rate 0.001 --batch-size 64 --seed 42 --device cuda
 ```
 
@@ -350,18 +350,18 @@ python -m train.train_seqrec --config configs/seqrec_cds.yaml `
 
 ### 附录 A：与 JSON 日志的对应关系
 
-- 主实验列表字段：`train/seqrec_hyperparameter_experiment_log.json` → `experiments` 数组。  
+- 主实验列表字段：`train/llmrank_hyperparameter_experiment_log.json` → `experiments` 数组。  
 - 每类最优摘要：同文件 → `best_by_category`。  
-- 测试集 JSON 字段名与 `train/train_seqrec.py` 写出结构一致。
+- 测试集 JSON 字段名与 `train/train_llmrank.py` 写出结构一致。
 
 ### 附录 B：文件索引
 
 | 文件 | 用途 |
 | --- | --- |
 | `docs/SEQREC_HYPERPARAMETER_EXPERIMENTS.md` | 本报告（详细稿） |
-| `train/seqrec_hyperparameter_experiment_log.json` | 实验级记录与最优摘要 |
-| `train/seqrec_{category}_test_results.json` | 测试集结果（脚本兼容格式） |
-| `results/tables/seqrec_{category}_test_results.json` | 报告汇总副本 |
+| `train/llmrank_hyperparameter_experiment_log.json` | 实验级记录与最优摘要 |
+| `train/llmrank_{category}_test_results.json` | 测试集结果（脚本兼容格式） |
+| `results/tables/llmrank_{category}_test_results.json` | 报告汇总副本 |
 | `docs/MODEL_TRAINING.md` | 训练流程与参数说明（官方文档） |
 
 ---

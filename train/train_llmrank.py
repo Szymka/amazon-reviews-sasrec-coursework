@@ -17,12 +17,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from evaluation.metrics import evaluate
-from models.seqrec.dataset import build_datasets_from_config, load_simple_yaml
-from models.seqrec.model import GRUSeqRec, SASRec
+from evaluation.metrics import evaluate_batches
+from models.llmrank.dataset import build_datasets_from_config, load_simple_yaml
+from models.llmrank.model import build_llmrank_model, sequence_lengths
 
 
-class SeqRecTorchDataset(Dataset):
+class TensorBatchDataset(Dataset):
     def __init__(self, base: Any) -> None:
         self.base = base
 
@@ -38,7 +38,7 @@ class SeqRecTorchDataset(Dataset):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train GRU-based sequential recommender (coursework).")
+    parser = argparse.ArgumentParser(description="Train LLMRank sequential backbone for Top-K coursework TSV tensors.")
     parser.add_argument("--config", type=Path, required=True, help="Path to configs/*.yaml")
     parser.add_argument(
         "--device",
@@ -69,14 +69,64 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def maybe_subset_train(dataset: SeqRecTorchDataset, max_users: int | None) -> SeqRecTorchDataset:
+def configure_cuda_numeric_stability(device: torch.device) -> None:
+    """Reduce NaNs from TF32 TensorCore paths and fused SDPA used by nn.MultiheadAttention."""
+    if device.type != "cuda":
+        return
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    setter = getattr(torch, "set_float32_matmul_precision", None)
+    if callable(setter):
+        try:
+            setter("highest")
+        except (TypeError, ValueError, RuntimeError):
+            pass
+    for name in ("enable_flash_sdp", "enable_mem_efficient_sdp", "enable_cudnn_sdp"):
+        fn = getattr(torch.backends.cuda, name, None)
+        if callable(fn):
+            try:
+                fn(False)
+            except Exception:
+                pass
+
+
+_LOSS_DIAG_COUNT = {"n": 0}
+
+
+def _log_non_finite_loss_diag(
+    model: nn.Module,
+    *,
+    epoch: int,
+    hidden: torch.Tensor | None,
+    targets: torch.Tensor,
+    num_items: int,
+) -> None:
+    if _LOSS_DIAG_COUNT["n"] >= 1:
+        return
+    _LOSS_DIAG_COUNT["n"] += 1
+    msg = ["first non-finite loss diagnostic (printing once):"]
+    with torch.no_grad():
+        msg.append(f"  epoch={epoch} torch={torch.__version__} cuda={torch.version.cuda}")
+        msg.append(f"  targets min/max={int(targets.min())}/{int(targets.max())} num_items={num_items}")
+        if hidden is not None:
+            msg.append(f"  hidden finite fraction={torch.isfinite(hidden).float().mean().item():.6f}")
+        w = getattr(model, "item_embedding", None)
+        if w is not None and hasattr(w, "weight"):
+            msg.append(
+                "  item_embedding.weight finite="
+                + f"{torch.isfinite(w.weight).all().item()}"
+            )
+    tqdm.write("\n".join(msg))
+
+
+def maybe_subset_train(dataset: TensorBatchDataset, max_users: int | None) -> TensorBatchDataset:
     if max_users is None:
         return dataset
     base = dataset.base
     keep = [i for i in range(len(base)) if int(base[i]["user_id"]) < max_users]
     if not keep:
         raise ValueError("--max-users produced an empty training set.")
-    return SeqRecTorchDataset(Subset(base, keep))
+    return TensorBatchDataset(Subset(base, keep))
 
 
 @torch.no_grad()
@@ -87,17 +137,15 @@ def run_eval(
     topk: int,
 ) -> dict[str, float]:
     model.eval()
-    all_scores: list[torch.Tensor] = []
-    all_targets: list[torch.Tensor] = []
-    for batch in loader:
-        input_ids = batch["input_ids"].to(device)
-        targets = batch["target_id"].to(device)
-        logits = model.predict(input_ids)
-        all_scores.append(logits.cpu())
-        all_targets.append(targets.cpu())
-    scores = torch.cat(all_scores, dim=0)
-    targets = torch.cat(all_targets, dim=0)
-    return evaluate(scores, targets, k=topk)
+
+    def batch_pairs():
+        for batch in loader:
+            input_ids = batch["input_ids"].to(device)
+            targets = batch["target_id"].to(device)
+            logits = model.predict(input_ids)
+            yield logits.cpu(), targets.cpu()
+
+    return evaluate_batches(batch_pairs(), k=topk)
 
 
 def sample_negatives(
@@ -130,7 +178,7 @@ def sampled_softmax_loss(
     num_neg: int,
     padding_id: int,
 ) -> torch.Tensor:
-    """CE over {target, num_neg random items} — scalable training for large item vocab."""
+    """CE over {target, num_neg random items}."""
     device = hidden.device
     bsz = targets.size(0)
     negs = sample_negatives(targets, num_items, num_neg, device)
@@ -142,28 +190,14 @@ def sampled_softmax_loss(
 
 
 def build_model(config: dict[str, Any], num_items: int, padding_id: int) -> nn.Module:
-    name = str(config.get("model_name", "GRUSeqRec")).upper()
-    maxlen = int(config["maxlen"])
-    hidden = int(config["hidden_units"])
-    dropout = float(config["dropout_rate"])
-    layers = int(config.get("gru_num_layers", config.get("num_blocks", 1)))
-    if name in {"SASREC", "SEQREC"}:
-        return SASRec(
-            num_items=num_items,
-            maxlen=maxlen,
-            hidden_units=hidden,
-            num_blocks=layers,
-            num_heads=int(config.get("num_heads", 2)),
-            dropout_rate=dropout,
-            padding_id=padding_id,
-        )
-    return GRUSeqRec(
+    return build_llmrank_model(
         num_items=num_items,
-        maxlen=maxlen,
-        hidden_units=hidden,
-        gru_num_layers=layers,
-        dropout_rate=dropout,
-        padding_id=padding_id,
+        maxlen=int(config["maxlen"]),
+        hidden_units=int(config["hidden_units"]),
+        dropout_rate=float(config["dropout_rate"]),
+        padding_id=int(padding_id),
+        num_blocks=int(config.get("num_blocks", 2)),
+        num_heads=int(config.get("num_heads", 2)),
     )
 
 
@@ -173,21 +207,20 @@ def model_config_blob(
     padding_id: int,
     model: nn.Module,
 ) -> dict[str, Any]:
-    layers = int(config.get("gru_num_layers", config.get("num_blocks", 1)))
-    blob: dict[str, Any] = {
+    return {
         "model_class": model.__class__.__name__,
         "category": str(config["category"]),
         "num_items": int(num_items),
         "maxlen": int(config["maxlen"]),
         "hidden_units": int(config["hidden_units"]),
-        "gru_num_layers": layers,
+        "num_blocks": int(config.get("num_blocks", 2)),
+        "num_heads": int(config.get("num_heads", 2)),
         "dropout_rate": float(config["dropout_rate"]),
         "padding_id": int(padding_id),
         "topk": int(config.get("topk", 10)),
         "train_loss_mode": str(config.get("train_loss_mode", "sampled")),
         "num_sampled_negatives": int(config.get("num_sampled_negatives", 512)),
     }
-    return blob
 
 
 def main() -> int:
@@ -214,6 +247,7 @@ def main() -> int:
     seed = int(config.get("seed", 42))
     set_seed(seed)
     device = torch.device(args.device)
+    configure_cuda_numeric_stability(device)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     args.results_dir.mkdir(parents=True, exist_ok=True)
 
@@ -225,9 +259,9 @@ def main() -> int:
     padding_id = int(stats.get("padding_id", 0))
     topk = int(config.get("topk", 10))
 
-    train_ds = maybe_subset_train(SeqRecTorchDataset(datasets["train"]), args.max_users)
-    dev_ds = SeqRecTorchDataset(datasets["dev"])
-    test_ds = SeqRecTorchDataset(datasets["test"])
+    train_ds = maybe_subset_train(TensorBatchDataset(datasets["train"]), args.max_users)
+    dev_ds = TensorBatchDataset(datasets["dev"])
+    test_ds = TensorBatchDataset(datasets["test"])
 
     train_loader = DataLoader(
         train_ds,
@@ -252,7 +286,7 @@ def main() -> int:
     best_ndcg = -1.0
     stale = 0
 
-    stem = f"seqrec_{category}"
+    stem = f"llmrank_{category}"
     best_weights_path = args.output_dir / f"{stem}_best.pth"
     best_config_path = args.output_dir / f"{stem}_best_config.json"
 
@@ -263,13 +297,16 @@ def main() -> int:
         for batch in progress:
             input_ids = batch["input_ids"].to(device)
             targets = batch["target_id"].to(device)
-            lengths = GRUSeqRec.sequence_lengths(input_ids, padding_id)
+            lengths = sequence_lengths(input_ids, padding_id)
+            hidden_loss: torch.Tensor | None = None
             if full_ce:
+                assert criterion is not None
                 logits = model(input_ids, lengths)
                 logits[:, padding_id] = -1e9
                 loss = criterion(logits, targets)
             else:
                 hidden = model.encode(input_ids, lengths)
+                hidden_loss = hidden
                 loss = sampled_softmax_loss(
                     model,
                     hidden,
@@ -278,6 +315,17 @@ def main() -> int:
                     num_sampled_neg,
                     padding_id,
                 )
+            if not torch.isfinite(loss):
+                _log_non_finite_loss_diag(
+                    model,
+                    epoch=epoch,
+                    hidden=hidden_loss,
+                    targets=targets,
+                    num_items=num_items,
+                )
+                tqdm.write(f"WARN: skip batch with non-finite loss (epoch {epoch})")
+                optimizer.zero_grad(set_to_none=True)
+                continue
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)

@@ -6,21 +6,21 @@
 
 ✅ 已完成的工作：
 
-- SASRec 模型实现（`models/seqrec/model.py`）
-- 训练脚本（`train/train_seqrec.py`）
-- 配置文件（`configs/seqrec_*.yaml`）
+- LLMRank 顺序模型（`models/llmrank/model/sasrec.py`）
+- 训练脚本（`train/train_llmrank.py`）
+- 配置文件（`configs/llmrank_*.yaml`）
 - 评估函数（`evaluation/metrics.py`）
-- 数据加载模块（`models/seqrec/dataset.py`）
+- 数据加载模块（`models/llmrank/dataset.py`）
 
 ## 代码结构
 
 | 目录/文件                  | 说明                                         |
 | -------------------------- | -------------------------------------------- |
-| `train/train_seqrec.py`    | 主训练脚本，支持多数据集切换、早停、模型保存 |
-| `models/seqrec/model.py`   | SASRec 模型实现                              |
-| `models/seqrec/dataset.py` | 数据集加载和预处理                           |
+| `train/train_llmrank.py`    | 主训练脚本，支持多数据集切换、早停、模型保存 |
+| `models/llmrank/model/sasrec.py` | LLMRank 顺序骨干（PyTorch）            |
+| `models/llmrank/dataset.py` | 数据集加载和预处理                           |
 | `evaluation/metrics.py`    | 评估指标计算                                 |
-| `configs/seqrec_*.yaml`    | 超参数配置文件                               |
+| `configs/llmrank_*.yaml`   | 超参数配置文件                               |
 
 ## 训练命令
 
@@ -28,25 +28,25 @@
 
 ```powershell
 # 训练单个类别（使用默认配置）
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml
 
 # 明确指定使用 GPU
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda
 
 # 训练所有类别
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_musical.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_cds.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_musical.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_cds.yaml --device cuda
 ```
 
 ### 使用部分数据快速测试
 
 ```powershell
 # 使用 1000 个用户快速验证
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda --max-users 1000
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda --max-users 1000
 
 # 使用一半数据量
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda --max-users 25000
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda --max-users 25000
 ```
 
 ## 超参数配置
@@ -56,9 +56,9 @@ python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cu
 基础配置已放在：
 
 ```text
-configs/seqrec_industrial.yaml
-configs/seqrec_musical.yaml
-configs/seqrec_cds.yaml
+configs/llmrank_industrial.yaml
+configs/llmrank_musical.yaml
+configs/llmrank_cds.yaml
 ```
 
 ### 超参数说明
@@ -112,10 +112,12 @@ data/processed/<category>/test.tsv
 
 ### 2. 模型初始化
 
-根据配置文件中的超参数创建 SASRec 模型：
+根据配置文件中的超参数创建模型：
 
 ```python
-model = SASRec(
+from models.llmrank.model import LLMRankSequentialModel
+
+model = LLMRankSequentialModel(
     num_items=stats['num_items'],
     maxlen=args.maxlen,
     hidden_units=args.hidden_units,
@@ -135,8 +137,8 @@ model = SASRec(
 
 ### 4. 模型保存
 
-- 自动保存最佳模型到 `train/seqrec_{category}_best.pth`
-- 同时保存配置信息到 `train/seqrec_{category}_best_config.json`
+- 自动保存最佳模型到 `train/llmrank_{category}_best.pth`
+- 同时保存配置信息到 `train/llmrank_{category}_best_config.json`
 
 ## 评估与输出
 
@@ -161,13 +163,13 @@ Test Results for Industrial_and_Scientific:
 1. **训练目录**（用于模型检查）：
 
    ```text
-   train/seqrec_{category}_test_results.json
+   train/llmrank_{category}_test_results.json
    ```
 
 2. **结果目录**（用于报告）：
 
    ```text
-   results/tables/seqrec_{category}_test_results.json
+   results/tables/llmrank_{category}_test_results.json
    ```
 
 ### JSON 输出格式
@@ -268,7 +270,7 @@ python -c "import torch; print(torch.cuda.is_available())"
 ```powershell
 python -m evaluation.evaluate_topk \
     --category Industrial_and_Scientific \
-    --model-path train/seqrec_Industrial_and_Scientific_best.pth \
+    --model-path train/llmrank_Industrial_and_Scientific_best.pth \
     --processed-root data/processed
 ```
 
@@ -278,5 +280,5 @@ python -m evaluation.evaluate_topk \
 
 ```
 Epoch 1/100 | Time: 2.5s | Train Loss: 22.7158 | Dev Loss: 43.5127 | Dev NDCG@10: 0.5655 | Dev HR@10: 1.0000
-  Best model saved to train\seqrec_Industrial_and_Scientific_best.pth
+  Best model saved to train\llmrank_Industrial_and_Scientific_best.pth
 ```

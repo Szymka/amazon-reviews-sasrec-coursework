@@ -76,12 +76,12 @@ data/processed/<category>/test.tsv
 1. **训练目录**（用于模型检查）：
 
    ```text
-   train/seqrec_{category}_test_results.json
+   train/llmrank_{category}_test_results.json
    ```
 
 2. **结果目录**（用于报告）：
    ```text
-   results/tables/seqrec_{category}_test_results.json
+   results/tables/llmrank_{category}_test_results.json
    ```
 
 ### 输出格式
@@ -175,12 +175,12 @@ results/figures/
 
 ```powershell
 # 训练并评估单个类别
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda
 
 # 训练并评估所有类别
-python -m train.train_seqrec --config configs/seqrec_industrial.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_musical.yaml --device cuda
-python -m train.train_seqrec --config configs/seqrec_cds.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_musical.yaml --device cuda
+python -m train.train_llmrank --config configs/llmrank_cds.yaml --device cuda
 ```
 
 ### 单独评估已训练模型
@@ -188,7 +188,7 @@ python -m train.train_seqrec --config configs/seqrec_cds.yaml --device cuda
 ```powershell
 python -m evaluation.evaluate_topk \
     --category Industrial_and_Scientific \
-    --model-path train/seqrec_Industrial_and_Scientific_best.pth \
+    --model-path train/llmrank_Industrial_and_Scientific_best.pth \
     --processed-root data/processed
 ```
 

@@ -2,7 +2,7 @@
 
 ## 1. 任务目标
 
-本项目负责推荐系统大作业的第一部分：数据预处理。目标是将 Amazon Reviews 2023 的三个 5-Core 商品类别数据整理为序列推荐模型 SASRec 可读取的格式。
+本项目负责推荐系统大作业的第一部分：数据预处理。目标是将 Amazon Reviews 2023 的三个 5-Core 商品类别数据整理为 **coursework 顺序推荐（LLMRank 训练脚本）**可读取的格式。
 
 本部分只处理数据下载、清洗、时间序列划分、ID 映射、格式转换和数据检查，不负责模型训练、调参或最终指标计算。
 
@@ -51,7 +51,7 @@ data/raw/Industrial_and_Scientific/Industrial_and_Scientific.jsonl.gz
 data/raw/Industrial_and_Scientific/meta_Industrial_and_Scientific.jsonl.gz
 ```
 
-`train`、`valid`、`test` 是 SASRec 预处理必需文件；`review`、`meta` 不参与默认预处理流程。
+`train`、`valid`、`test` 是本流水线 **必需** 的官方分片；`review`、`meta` 不参与默认预处理流程。
 
 ## 5. 预期输出文件
 
@@ -76,16 +76,16 @@ data/processed/<category>/stats.json
 - `train.tsv`：样本级训练数据，对应每个用户的前 `N-2` 个交互
 - `dev.tsv`：样本级验证数据，对应每个用户的第 `N-1` 个交互
 - `test.tsv`：样本级测试数据，对应每个用户的第 `N` 个交互
-- `seqrec_sequence.txt`：经典 SASRec 序列格式文件
+- `seqrec_sequence.txt`：按用户汇总的整条交互序列文本（文件名沿用历史；主训练使用 TSV）
 - `user2id.json`：原始用户 ID 到连续整数 ID 的映射
 - `id2user.json`：连续整数 ID 到原始用户 ID 的映射
 - `item2id.json`：`parent_asin` 到连续整数 ID 的映射
 - `id2item.json`：连续整数 ID 到原始 `parent_asin` 的映射
 - `stats.json`：该类别的数据统计摘要
 
-## 6. SASRec 数据格式设计
+## 6. 样本级与序列文本格式（LLMRank / coursework）
 
-后续模型同学会使用用户历史序列预测下一件商品的 `parent_asin`。
+后续使用 `models/llmrank` 的同学会以用户历史序列预测下一件商品的 `parent_asin`。
 
 样本级 `train.tsv`、`dev.tsv`、`test.tsv` 统一使用以下字段顺序：
 
@@ -103,25 +103,7 @@ user_id_int	target_id	rating	timestamp	seq_ids	raw_user_id	raw_parent_asin
 - `raw_user_id`：原始用户 ID，便于排查；
 - `raw_parent_asin`：原始商品 ID，便于排查。
 
-经典 SASRec 序列文件 `seqrec_sequence.txt` 采用整数 ID 后的序列格式：
-
-```text
-user_id_int item_id_1 item_id_2 item_id_3 ...
-```
-
-示例：
-
-```text
-1 10 25 37 42
-2 7 19 81
-```
-
-含义：
-
-- 每一行对应一个用户；
-- 第一列是重新映射后的 `user_id_int`；
-- 后续列是按照时间升序排列的历史 `item_id`；
-- `seqrec_sequence.txt` 主要保留给经典 SASRec 读取流程，样本级训练、验证和测试以 TSV 文件为准。
+`seqrec_sequence.txt`（每行：`user_id_int item_id_1 item_id_2 ...`，时间升序）主要作辅助导出；**主训练 / 验证 / 测试读取 `*.tsv`**。
 
 ## 7. ID 映射规则
 

@@ -1,8 +1,6 @@
-# Pip extras for conda env "llmrec" (after: conda create -n llmrec python=3.10 pip numpy tqdm pytz -y)
-torch>=2.1,<2.3
+# Conda env "llmrec": training + evaluation for LLMRank backbone on coursework TSV.
+# conda create -n llmrec python=3.10 -y && conda activate llmrec && pip install -r requirements-llmrec.txt
+
+torch>=2.1,<2.9
 pandas>=2.0
-transformers==4.32.1
-sentence-transformers==2.2.2
-accelerate>=0.25,<0.26
-# Optional, for A-LLMRec stage-2 / quantization on Linux; may fail on Windows:
-# bitsandbytes==0.42.0
+tqdm>=4.66

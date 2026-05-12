@@ -1,11 +1,17 @@
-# Configs
+# 配置文件（LLMRank 顺序骨干）
 
-本目录保存实验配置。当前 YAML 文件是 SASRec 的默认建议参数，不是最终调参结果。
+`llmrank_*.yaml` 为 **Amazon coursework** 扁平键值配置：指向 `data/processed/<category>/` 下的 `train.tsv`、`dev.tsv`、`test.tsv`、`stats.json`，并设置 `train/train_llmrank.py` 的超参数。
 
-配置文件：
+| 文件 | `category` |
+| --- | --- |
+| `llmrank_industrial.yaml` | `Industrial_and_Scientific` |
+| `llmrank_musical.yaml` | `Musical_Instruments` |
+| `llmrank_cds.yaml` | `CDs_and_Vinyl` |
+| `llmrank_tiny.yaml` | `examples/tiny_sample`（冒烟） |
 
-- `seqrec_industrial.yaml`
-- `seqrec_musical.yaml`
-- `seqrec_cds.yaml`
+训练：
 
-训练同学可以调整 `maxlen`、`hidden_units`、`num_blocks`、`dropout_rate`、`learning_rate`、`batch_size`、`num_epochs` 等参数，但应保留相对路径，避免写死本机路径。
+```powershell
+conda activate llmrec
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml --device cuda
+```

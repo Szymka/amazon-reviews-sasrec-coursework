@@ -1,3 +1,4 @@
+# Smoke config: examples/tiny_sample (no GPU required for a short CPU run).
 category: tiny_sample
 processed_dir: examples/tiny_sample
 train_file: examples/tiny_sample/train.tsv
@@ -5,10 +6,8 @@ dev_file: examples/tiny_sample/dev.tsv
 test_file: examples/tiny_sample/test.tsv
 stats_file: examples/tiny_sample/stats.json
 
-model_name: GRUSeqRec
 maxlen: 10
 hidden_units: 64
-gru_num_layers: 1
 num_blocks: 2
 num_heads: 2
 dropout_rate: 0.2

@@ -91,18 +91,12 @@ logs/
 
 # Regenerated JSON metric dumps from training scripts (optional: delete lines to version small reports)
 train/*_test_results.json
-train/seqrec_*_test_results.json
 evaluation/*_test_results.json
 
 # Empty layout only: add .gitkeep under results/ if you want the tree
 results/**
 !results/**/
 !results/**/.gitkeep
-
-# A-LLMRec generated paths only (pre_train/sasrec/*.py stays tracked)
-A-LLMRec/data/
-A-LLMRec/models/saved_models/
-A-LLMRec/recommendation_output.txt
 
 # Jupyter checkpoint sidecars
 .ipynb_checkpoints/

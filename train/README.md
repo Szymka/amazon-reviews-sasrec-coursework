@@ -1,26 +1,19 @@
-# Train
+# Training
 
-训练入口脚本放在本目录。
+Train the LLMRank standalone sequential backbone on coursework TSV tensors:
 
-建议后续新增：
+```
+train/train_llmrank.py
+```
 
-```text
+Run from repo root (`amazon-reviews-sasrec-coursework/`):
+
+```powershell
+python -m train.train_llmrank --config configs/llmrank_industrial.yaml
+```
+
+Check processed data compatibility:
+
+```
 train/check_data_loading.py
-train/train_seqrec.py
 ```
-
-当前已添加：
-
-```powershell
-python train/check_data_loading.py --config configs/seqrec_industrial.yaml
-```
-
-该脚本用于在训练前检查 processed 数据是否能被正确读取，并验证 `maxlen`、padding 和 train/dev/test 划分。
-
-基本调用形式建议为：
-
-```powershell
-python train/train_seqrec.py --config configs/seqrec_industrial.yaml
-```
-
-训练脚本应读取配置文件中的相对路径，不要写死本机绝对路径。模型 checkpoint、日志、`runs/`、`wandb/` 不提交到 GitHub。

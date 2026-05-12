@@ -4,14 +4,14 @@ import argparse
 import json
 from pathlib import Path
 
-from models.seqrec.dataset import DEFAULT_CATEGORIES
-from models.seqrec.dataset import build_category_datasets
-from models.seqrec.dataset import build_datasets_from_config
+from models.llmrank.dataset import DEFAULT_CATEGORIES
+from models.llmrank.dataset import build_category_datasets
+from models.llmrank.dataset import build_datasets_from_config
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="检查 SASRec processed 数据是否能被正确加载。"
+        description="检查 coursework processed 数据是否能被正确加载（LLMRank 流水线）。"
     )
     parser.add_argument(
         "--processed-root",
@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
         "--config",
         type=Path,
         default=None,
-        help="可选：直接从 configs/seqrec_*.yaml 读取路径和 maxlen。",
+        help="可选：直接从 configs/llmrank_*.yaml 读取路径和 maxlen。",
     )
     parser.add_argument(
         "--maxlen",

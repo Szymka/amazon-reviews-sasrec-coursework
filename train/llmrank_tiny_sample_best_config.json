@@ -1,15 +1,16 @@
 {
-  "model_class": "GRUSeqRec",
+  "model_class": "LLMRankSequentialModel",
   "category": "tiny_sample",
   "num_items": 8,
   "maxlen": 10,
   "hidden_units": 64,
-  "gru_num_layers": 1,
+  "num_blocks": 2,
+  "num_heads": 2,
   "dropout_rate": 0.2,
   "padding_id": 0,
   "topk": 10,
   "train_loss_mode": "sampled",
   "num_sampled_negatives": 4,
   "best_epoch": 1,
-  "best_dev_ndcg": 0.3511588420101352
+  "best_dev_ndcg": 0.5654648767857288
 }

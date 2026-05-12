@@ -5,10 +5,11 @@ from pathlib import Path
 
 import torch
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from models.seqrec.dataset import build_category_datasets
-from models.seqrec.model import SASRec
+from models.llmrank.dataset import build_category_datasets
+from models.llmrank.model import LLMRankSequentialModel
 from evaluation.metrics import evaluate, ndcg_at_k, hit_rate_at_k
 
 
@@ -16,26 +17,26 @@ def test_data_loading():
     print("=" * 60)
     print("测试 1: 数据加载")
     print("=" * 60)
-    
+
     try:
         datasets = build_category_datasets(
-            processed_root="examples",
+            processed_root=PROJECT_ROOT / "examples",
             category="tiny_sample",
-            maxlen=10
+            maxlen=10,
         )
-        
-        print(f"✓ 数据集加载成功")
+
+        print("[OK] 数据集加载成功")
         print(f"  - 训练集: {len(datasets['train'])} 样本")
         print(f"  - 验证集: {len(datasets['dev'])} 样本")
         print(f"  - 测试集: {len(datasets['test'])} 样本")
-        
-        sample = datasets['train'][0]
+
+        sample = datasets["train"][0]
         print(f"  - 样本示例: user_id={sample['user_id']}, target_id={sample['target_id']}")
         print(f"  - 序列长度: {sample['seq_len']}, padding后: {len(sample['input_ids'])}")
-        
+
         return True
     except Exception as e:
-        print(f"✗ 数据加载失败: {e}")
+        print(f"[FAIL] 数据加载失败: {e}")
         return False
 
 
@@ -45,7 +46,7 @@ def test_model():
     print("=" * 60)
     
     try:
-        model = SASRec(
+        model = LLMRankSequentialModel(
             num_items=8,
             maxlen=10,
             hidden_units=64,
@@ -55,19 +56,19 @@ def test_model():
             padding_id=0
         )
         
-        print(f"✓ 模型创建成功")
+        print("[OK] 模型创建成功")
         print(f"  - 参数数量: {sum(p.numel() for p in model.parameters())}")
-        
+
         input_ids = torch.randint(0, 8, (2, 10))
         logits = model.predict(input_ids)
-        
-        print(f"✓ 前向传播成功")
+
+        print("[OK] 前向传播成功")
         print(f"  - 输入形状: {input_ids.shape}")
         print(f"  - 输出形状: {logits.shape}")
         
         return True
     except Exception as e:
-        print(f"✗ 模型测试失败: {e}")
+        print(f"[FAIL] 模型测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -88,17 +89,17 @@ def test_metrics():
         ndcg = ndcg_at_k(predicted, targets, k=10)
         hr = hit_rate_at_k(predicted, targets, k=10)
         
-        print(f"✓ NDCG@10 计算成功: {ndcg:.4f}")
-        print(f"✓ HitRate@10 计算成功: {hr:.4f}")
-        
+        print(f"[OK] NDCG@10 计算成功: {ndcg:.4f}")
+        print(f"[OK] HitRate@10 计算成功: {hr:.4f}")
+
         metrics = evaluate(predicted, targets, k=10)
-        print(f"✓ 完整评估指标:")
+        print("[OK] 完整评估指标:")
         for key, value in metrics.items():
             print(f"  - {key}: {value:.4f}")
         
         return True
     except Exception as e:
-        print(f"✗ 评估函数测试失败: {e}")
+        print(f"[FAIL] 评估函数测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -110,12 +111,12 @@ def test_config_loading():
     print("=" * 60)
     
     try:
-        from models.seqrec.dataset import load_simple_yaml
+        from models.llmrank.dataset import load_simple_yaml
         
-        config_path = Path(__file__).parent.parent / "configs" / "seqrec_industrial.yaml"
+        config_path = PROJECT_ROOT / "configs" / "llmrank_industrial.yaml"
         config = load_simple_yaml(str(config_path))
         
-        print(f"✓ 配置文件加载成功")
+        print("[OK] 配置文件加载成功")
         print(f"  - category: {config.get('category')}")
         print(f"  - maxlen: {config.get('maxlen')}")
         print(f"  - hidden_units: {config.get('hidden_units')}")
@@ -126,12 +127,12 @@ def test_config_loading():
         
         return True
     except Exception as e:
-        print(f"✗ 配置加载失败: {e}")
+        print(f"[FAIL] 配置加载失败: {e}")
         return False
 
 
 def main():
-    print("\n开始测试 SASRec 项目...\n")
+    print("\n开始测试 LLMRank 顺序骨干项目...\n")
     
     results = []
     
@@ -145,16 +146,16 @@ def main():
     print("=" * 60)
     
     for name, passed in results:
-        status = "✓ 通过" if passed else "✗ 失败"
+        status = "[OK] 通过" if passed else "[FAIL] 失败"
         print(f"{name}: {status}")
     
     all_passed = all(result[1] for result in results)
     
     if all_passed:
-        print("\n✓ 所有测试通过！项目代码无误。")
+        print("\n[OK] 所有测试通过！项目代码无误。")
         return 0
     else:
-        print("\n✗ 部分测试失败，请检查代码。")
+        print("\n[FAIL] 部分测试失败，请检查代码。")
         return 1
 
 

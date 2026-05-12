@@ -134,8 +134,8 @@ class ProcessedCategoryPaths:
             raise FileNotFoundError(f"missing processed files: {missing_text}")
 
 
-class SASRecProcessedDataset:
-    """Read processed TSV data and expose SASRec-ready padded histories."""
+class CourseworkSequenceDataset:
+    """Reads ``data/processed/<category>/{train,dev,test}.tsv`` into padded ``input_ids`` / ``target_id``."""
 
     def __init__(
         self,
@@ -213,13 +213,13 @@ def build_category_datasets(
     processed_root: str | Path,
     category: str,
     maxlen: int,
-) -> dict[str, SASRecProcessedDataset]:
+) -> dict[str, CourseworkSequenceDataset]:
     paths = ProcessedCategoryPaths.from_category(processed_root, category)
     paths.validate()
     stats = json.loads(paths.stats_file.read_text(encoding="utf-8"))
     padding_id = int(stats.get("padding_id", 0))
     return {
-        split: SASRecProcessedDataset(
+        split: CourseworkSequenceDataset(
             split_file=paths.split_file(split),
             split=split,
             maxlen=maxlen,
@@ -233,13 +233,13 @@ def build_category_datasets(
 
 def build_datasets_from_config(
     config_path: str | Path,
-) -> dict[str, SASRecProcessedDataset]:
+) -> dict[str, CourseworkSequenceDataset]:
     paths, maxlen = ProcessedCategoryPaths.from_config(config_path)
     paths.validate()
     stats = json.loads(paths.stats_file.read_text(encoding="utf-8"))
     padding_id = int(stats.get("padding_id", 0))
     return {
-        split: SASRecProcessedDataset(
+        split: CourseworkSequenceDataset(
             split_file=paths.split_file(split),
             split=split,
             maxlen=maxlen,

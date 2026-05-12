@@ -1,3 +1,5 @@
+# Industrial_and_Scientific — coursework SeqRec train/eval + A-LLMRec SASRec eval share these paths (run from repo root).
+# Primary ranking metric: NDCG@k where k = topk (10 => NDCG@10). Keep maxlen/hidden_units aligned with A-LLMRec/train_sasrec_coursework.py when comparing systems.
 category: Industrial_and_Scientific
 processed_dir: data/processed/Industrial_and_Scientific
 train_file: data/processed/Industrial_and_Scientific/train.tsv
@@ -7,14 +9,18 @@ sequence_file: data/processed/Industrial_and_Scientific/seqrec_sequence.txt
 interactions_file: data/processed/Industrial_and_Scientific/seqrec_interactions.txt
 stats_file: data/processed/Industrial_and_Scientific/stats.json
 
-model_name: SASRec
+model_name: GRUSeqRec
 maxlen: 50
-hidden_units: 64
+hidden_units: 128
+gru_num_layers: 2
 num_blocks: 2
 num_heads: 2
 dropout_rate: 0.2
-learning_rate: 0.001
-batch_size: 128
+learning_rate: 0.002
+weight_decay: 0.0001
+train_loss_mode: sampled
+num_sampled_negatives: 512
+batch_size: 256
 num_epochs: 100
 topk: 10
 seed: 42

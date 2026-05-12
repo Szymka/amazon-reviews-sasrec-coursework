@@ -3,84 +3,66 @@ from __future__ import annotations
 import torch
 
 
-def hit_rate_at_k(predicted: torch.Tensor, target: torch.Tensor, k: int = 10) -> float:
-    batch_size = target.size(0)
-    actual_k = min(k, predicted.size(1))
-    _, topk_indices = torch.topk(predicted, actual_k, dim=1)
-    
-    hit = 0
-    for i in range(batch_size):
-        if target[i] in topk_indices[i]:
-            hit += 1
-    
-    return hit / batch_size
+def _effective_k(scores: torch.Tensor, k: int) -> int:
+    """Top-k cannot exceed the number of scored classes."""
+    return int(min(k, scores.shape[1]))
 
 
-def ndcg_at_k(predicted: torch.Tensor, target: torch.Tensor, k: int = 10) -> float:
-    batch_size = target.size(0)
-    actual_k = min(k, predicted.size(1))
-    _, topk_indices = torch.topk(predicted, actual_k, dim=1)
-    
-    ndcg_sum = 0.0
-    for i in range(batch_size):
-        rank = (topk_indices[i] == target[i]).nonzero(as_tuple=True)[0]
-        if len(rank) > 0:
-            rank_pos = rank[0].item() + 1
-            ndcg_sum += 1.0 / torch.log2(torch.tensor(rank_pos + 1, dtype=torch.float32)).item()
-    
-    return ndcg_sum / batch_size
+def _ranks_of_targets(scores: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    """1-based rank by descending score; ties broken by strict `>` count."""
+    target_scores = scores.gather(1, targets.view(-1, 1)).squeeze(1)
+    return (scores > target_scores.unsqueeze(1)).sum(dim=1) + 1
 
 
-def recall_at_k(predicted: torch.Tensor, target: torch.Tensor, k: int = 10) -> float:
-    batch_size = target.size(0)
-    actual_k = min(k, predicted.size(1))
-    _, topk_indices = torch.topk(predicted, actual_k, dim=1)
-    
-    recall = 0
-    for i in range(batch_size):
-        if target[i] in topk_indices[i]:
-            recall += 1
-    
-    return recall / batch_size
+def ndcg_at_k(scores: torch.Tensor, targets: torch.Tensor, k: int = 10) -> float:
+    scores = scores.detach().cpu()
+    targets = targets.detach().cpu().long()
+    if scores.ndim != 2:
+        raise ValueError("scores must be 2D (batch, num_classes).")
+    ranks = _ranks_of_targets(scores, targets)
+    gains = torch.where(
+        ranks <= k,
+        1.0 / torch.log2(ranks.double() + 1),
+        torch.zeros_like(ranks, dtype=torch.double),
+    )
+    return float(gains.mean().item())
 
 
-def mrr_at_k(predicted: torch.Tensor, target: torch.Tensor, k: int = 10) -> float:
-    batch_size = target.size(0)
-    actual_k = min(k, predicted.size(1))
-    _, topk_indices = torch.topk(predicted, actual_k, dim=1)
-    
-    mrr_sum = 0.0
-    for i in range(batch_size):
-        rank = (topk_indices[i] == target[i]).nonzero(as_tuple=True)[0]
-        if len(rank) > 0:
-            rank_pos = rank[0].item() + 1
-            mrr_sum += 1.0 / rank_pos
-    
-    return mrr_sum / batch_size
+def hit_rate_at_k(scores: torch.Tensor, targets: torch.Tensor, k: int = 10) -> float:
+    scores = scores.detach().cpu()
+    targets = targets.detach().cpu().long()
+    ek = _effective_k(scores, k)
+    topk = scores.topk(ek, dim=1).indices
+    hits = (topk == targets.view(-1, 1)).any(dim=1)
+    return float(hits.float().mean().item())
 
 
-def precision_at_k(predicted: torch.Tensor, target: torch.Tensor, k: int = 10) -> float:
-    batch_size = target.size(0)
-    actual_k = min(k, predicted.size(1))
-    _, topk_indices = torch.topk(predicted, actual_k, dim=1)
-    
-    precision_sum = 0.0
-    for i in range(batch_size):
-        if target[i] in topk_indices[i]:
-            precision_sum += 1.0 / actual_k
-    
-    return precision_sum / batch_size
+def mrr_at_k(scores: torch.Tensor, targets: torch.Tensor, k: int = 10) -> float:
+    scores = scores.detach().cpu()
+    targets = targets.detach().cpu().long()
+    ranks = _ranks_of_targets(scores, targets)
+    reciprocal = torch.where(
+        ranks <= k,
+        1.0 / ranks.double(),
+        torch.zeros_like(ranks, dtype=torch.double),
+    )
+    return float(reciprocal.mean().item())
 
 
-def evaluate(
-    logits: torch.Tensor,
-    targets: torch.Tensor,
-    k: int = 10,
-) -> dict[str, float]:
+def precision_at_k(scores: torch.Tensor, targets: torch.Tensor, k: int = 10) -> float:
+    scores = scores.detach().cpu()
+    targets = targets.detach().cpu().long()
+    ek = _effective_k(scores, k)
+    topk = scores.topk(ek, dim=1).indices
+    hits = (topk == targets.view(-1, 1)).any(dim=1)
+    return float((hits.float().sum() / (len(targets) * ek)).item())
+
+
+def evaluate(scores: torch.Tensor, targets: torch.Tensor, k: int = 10) -> dict[str, float]:
     return {
-        'hit_rate': hit_rate_at_k(logits, targets, k),
-        'ndcg': ndcg_at_k(logits, targets, k),
-        'recall': recall_at_k(logits, targets, k),
-        'mrr': mrr_at_k(logits, targets, k),
-        'precision': precision_at_k(logits, targets, k),
+        "ndcg": ndcg_at_k(scores, targets, k),
+        "hit_rate": hit_rate_at_k(scores, targets, k),
+        "recall": hit_rate_at_k(scores, targets, k),
+        "mrr": mrr_at_k(scores, targets, k),
+        "precision": precision_at_k(scores, targets, k),
     }

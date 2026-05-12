@@ -2,148 +2,106 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+class GRUSeqRec(nn.Module):
+    """GRU-based sequential recommender (GRU4Rec-style), tied output item embeddings."""
 
-
-class PositionalEncoding(nn.Module):
-    def __init__(self, maxlen: int, hidden_units: int) -> None:
-        super().__init__()
-        self.maxlen = maxlen
-        self.hidden_units = hidden_units
-        
-        position = torch.arange(maxlen).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, hidden_units, 2) * (-torch.log(torch.tensor(10000.0)) / hidden_units))
-        
-        pe = torch.zeros(maxlen, hidden_units)
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe.unsqueeze(0))
-    
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x + self.pe[:, :x.size(1)]
-
-
-class MultiHeadAttention(nn.Module):
-    def __init__(self, hidden_units: int, num_heads: int, dropout_rate: float) -> None:
-        super().__init__()
-        self.hidden_units = hidden_units
-        self.num_heads = num_heads
-        self.head_dim = hidden_units // num_heads
-        
-        self.q_proj = nn.Linear(hidden_units, hidden_units)
-        self.k_proj = nn.Linear(hidden_units, hidden_units)
-        self.v_proj = nn.Linear(hidden_units, hidden_units)
-        self.out_proj = nn.Linear(hidden_units, hidden_units)
-        
-        self.dropout = nn.Dropout(dropout_rate)
-    
-    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
-        batch_size, seq_len, hidden_units = x.size()
-        
-        q = self.q_proj(x).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        
-        scores = torch.matmul(q, k.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.head_dim, dtype=torch.float32))
-        
-        if mask is not None:
-            scores = scores.masked_fill(mask == 0, -1e9)
-        
-        attn = F.softmax(scores, dim=-1)
-        attn = self.dropout(attn)
-        
-        output = torch.matmul(attn, v)
-        output = output.transpose(1, 2).contiguous().view(batch_size, seq_len, hidden_units)
-        output = self.out_proj(output)
-        
-        return output
-
-
-class PointWiseFFN(nn.Module):
-    def __init__(self, hidden_units: int, dropout_rate: float) -> None:
-        super().__init__()
-        self.fc1 = nn.Linear(hidden_units, hidden_units * 4)
-        self.fc2 = nn.Linear(hidden_units * 4, hidden_units)
-        self.dropout = nn.Dropout(dropout_rate)
-        self.gelu = nn.GELU()
-    
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.gelu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
-        return x
-
-
-class TransformerBlock(nn.Module):
-    def __init__(self, hidden_units: int, num_heads: int, dropout_rate: float) -> None:
-        super().__init__()
-        self.attn = MultiHeadAttention(hidden_units, num_heads, dropout_rate)
-        self.ffn = PointWiseFFN(hidden_units, dropout_rate)
-        self.norm1 = nn.LayerNorm(hidden_units)
-        self.norm2 = nn.LayerNorm(hidden_units)
-        self.dropout1 = nn.Dropout(dropout_rate)
-        self.dropout2 = nn.Dropout(dropout_rate)
-    
-    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
-        residual = x
-        x = self.norm1(x)
-        x = self.attn(x, mask)
-        x = self.dropout1(x)
-        x = residual + x
-        
-        residual = x
-        x = self.norm2(x)
-        x = self.ffn(x)
-        x = self.dropout2(x)
-        x = residual + x
-        
-        return x
-
-
-class SASRec(nn.Module):
     def __init__(
         self,
         num_items: int,
-        maxlen: int = 50,
-        hidden_units: int = 64,
-        num_blocks: int = 2,
-        num_heads: int = 2,
+        maxlen: int,
+        hidden_units: int,
+        gru_num_layers: int = 1,
         dropout_rate: float = 0.2,
         padding_id: int = 0,
     ) -> None:
         super().__init__()
-        self.num_items = num_items
-        self.maxlen = maxlen
-        self.hidden_units = hidden_units
-        self.padding_id = padding_id
-        
-        self.item_emb = nn.Embedding(num_items + 1, hidden_units, padding_idx=padding_id)
-        self.pos_emb = PositionalEncoding(maxlen, hidden_units)
-        
-        self.blocks = nn.ModuleList([
-            TransformerBlock(hidden_units, num_heads, dropout_rate)
-            for _ in range(num_blocks)
-        ])
-        
-        self.norm = nn.LayerNorm(hidden_units)
-        self.dropout = nn.Dropout(dropout_rate)
-    
-    def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
-        mask = (input_ids != self.padding_id).unsqueeze(1).repeat(1, input_ids.size(1), 1)
-        mask = torch.tril(mask)
-        
-        x = self.item_emb(input_ids)
-        x = self.pos_emb(x)
-        x = self.dropout(x)
-        
-        for block in self.blocks:
-            x = block(x, mask)
-        
-        x = self.norm(x)
-        return x
-    
-    def predict(self, input_ids: torch.Tensor) -> torch.Tensor:
-        x = self.forward(input_ids)
-        last_hidden = x[:, -1, :]
-        logits = torch.matmul(last_hidden, self.item_emb.weight.T)
+        if num_items <= 0 or maxlen <= 0 or hidden_units <= 0:
+            raise ValueError("num_items, maxlen, hidden_units must be positive.")
+        self.num_items = int(num_items)
+        self.maxlen = int(maxlen)
+        self.hidden_units = int(hidden_units)
+        self.gru_num_layers = int(gru_num_layers)
+        self.padding_id = int(padding_id)
+        self.vocab_size = self.num_items + 1
+        self.item_embedding = nn.Embedding(self.vocab_size, self.hidden_units, padding_idx=self.padding_id)
+        self.gru = nn.GRU(
+            input_size=self.hidden_units,
+            hidden_size=self.hidden_units,
+            num_layers=self.gru_num_layers,
+            batch_first=True,
+            dropout=dropout_rate if self.gru_num_layers > 1 else 0.0,
+        )
+        self.dropout = nn.Dropout(float(dropout_rate))
+        self.out_norm = nn.LayerNorm(self.hidden_units)
+        self._reset_parameters()
+
+    def _reset_parameters(self) -> None:
+        nn.init.normal_(self.item_embedding.weight, mean=0.0, std=0.02)
+        if self.padding_id is not None:
+            with torch.no_grad():
+                self.item_embedding.weight[self.padding_id].zero_()
+        for name, param in self.gru.named_parameters():
+            if "weight_ih" in name:
+                nn.init.xavier_uniform_(param)
+            elif "weight_hh" in name:
+                nn.init.orthogonal_(param)
+            elif "bias" in name:
+                nn.init.zeros_(param)
+
+    @staticmethod
+    def sequence_lengths(input_ids: torch.Tensor, padding_id: int) -> torch.Tensor:
+        mask = input_ids != padding_id
+        return mask.sum(dim=1).clamp(min=1)
+
+    def encode(self, input_ids: torch.Tensor, lengths: torch.Tensor | None = None) -> torch.Tensor:
+        if lengths is None:
+            lengths = self.sequence_lengths(input_ids, self.padding_id)
+        emb = self.dropout(self.item_embedding(input_ids))
+        packed = nn.utils.rnn.pack_padded_sequence(
+            emb,
+            lengths.cpu(),
+            batch_first=True,
+            enforce_sorted=False,
+        )
+        _, h_n = self.gru(packed)
+        return self.out_norm(h_n[-1])
+
+    def logits_from_hidden(self, hidden: torch.Tensor) -> torch.Tensor:
+        return torch.matmul(hidden, self.item_embedding.weight.t())
+
+    def forward(self, input_ids: torch.Tensor, lengths: torch.Tensor | None = None) -> torch.Tensor:
+        hidden = self.encode(input_ids, lengths)
+        logits = self.logits_from_hidden(hidden)
         return logits
+
+    def predict(self, input_ids: torch.Tensor) -> torch.Tensor:
+        lengths = self.sequence_lengths(input_ids, self.padding_id)
+        logits = self.forward(input_ids, lengths)
+        logits = logits.clone()
+        logits[:, self.padding_id] = -1e9
+        return logits
+
+
+class SASRec(GRUSeqRec):
+    """Backward-compatible name: implementation is GRU-based (non-transformer)."""
+
+    def __init__(
+        self,
+        num_items: int,
+        maxlen: int,
+        hidden_units: int,
+        num_blocks: int = 2,
+        num_heads: int = 2,
+        dropout_rate: float = 0.2,
+        padding_id: int = 0,
+        gru_num_layers: int | None = None,
+    ) -> None:
+        layers = int(gru_num_layers) if gru_num_layers is not None else max(1, int(num_blocks))
+        super().__init__(
+            num_items=num_items,
+            maxlen=maxlen,
+            hidden_units=hidden_units,
+            gru_num_layers=layers,
+            dropout_rate=dropout_rate,
+            padding_id=padding_id,
+        )

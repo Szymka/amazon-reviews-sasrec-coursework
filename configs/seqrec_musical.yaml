@@ -7,14 +7,18 @@ sequence_file: data/processed/Musical_Instruments/seqrec_sequence.txt
 interactions_file: data/processed/Musical_Instruments/seqrec_interactions.txt
 stats_file: data/processed/Musical_Instruments/stats.json
 
-model_name: SASRec
+model_name: GRUSeqRec
 maxlen: 50
-hidden_units: 64
+hidden_units: 128
+gru_num_layers: 2
 num_blocks: 2
 num_heads: 2
 dropout_rate: 0.2
-learning_rate: 0.001
-batch_size: 128
+learning_rate: 0.002
+weight_decay: 0.0001
+train_loss_mode: sampled
+num_sampled_negatives: 512
+batch_size: 256
 num_epochs: 100
 topk: 10
 seed: 42

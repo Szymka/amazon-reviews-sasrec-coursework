@@ -1,68 +1,119 @@
-# Python cache
+# --- Track: code, configs, docs, examples/tiny_sample, .gitkeep placeholders ---
+# --- Do not commit: full raw/processed data, checkpoints, trackers, logs, bulky exports ---
+
+# Python
 __pycache__/
 **/__pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
 
 # Virtual environments
 .venv/
 venv/
 env/
 
-# Local environment files
+# Secrets / local env
 .env
 .env.*
 
-# Large raw and processed data
-data/raw/*
-data/processed/*
-!data/raw/.gitkeep
-!data/processed/.gitkeep
+# Local datasets (keep only .gitkeep under raw/processed, any depth)
+data/raw/**
+!data/raw/**/.gitkeep
+data/processed/**
+!data/processed/**/.gitkeep
+
+# Ship tiny fixtures with the repo
+!examples/tiny_sample/**
+
+# Avoid accidentally committing trained weights under examples/
+examples/tiny_sample/**/*.pth
+examples/tiny_sample/**/*.pt
+examples/tiny_sample/**/*.ckpt
+examples/tiny_sample/**/wandb/
+
+# Bulk / compressed data (any path)
 *.csv.gz
 *.jsonl.gz
 *.json.gz
+*.tsv.gz
 *.part
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.npz
+*.npy
+*.pkl
+*.pickle
 
-# Archives and ad-hoc local data exports
+# Archives / local dumps
 *.zip
 *.tar
 *.tar.gz
-*.parquet
+*.7z
+*.rar
 
-# Model checkpoints and training artifacts
+# Model weights (Python source remains tracked)
 checkpoints/
 checkpoint/
-*.pt
-*.pth
-*.ckpt
-*.bin
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.bin
+**/*.safetensors
+**/*.onnx
+*.gguf
+
+# Experiment tracking & training runs
 runs/
 wandb/
+mlruns/
+tensorboard/
+tensorboard_logs/
+lightning_logs/
+hydra/
+.hydra/
+outputs/
+output/
+
+# Logs
 logs/
+**/*.log
 *.log
 
-# Training outputs and results (keep only small summaries)
-train/*.pth
-train/*.pt
-train/*.ckpt
-train/*_config.json
-train/*.log
-evaluation/*.pth
-evaluation/*.pt
-evaluation/*.ckpt
+# Regenerated JSON metric dumps from training scripts (optional: delete lines to version small reports)
+train/*_test_results.json
+train/seqrec_*_test_results.json
+evaluation/*_test_results.json
 
-# Jupyter notebooks checkpoints
+# Empty layout only: add .gitkeep under results/ if you want the tree
+results/**
+!results/**/
+!results/**/.gitkeep
+
+# A-LLMRec generated paths only (pre_train/sasrec/*.py stays tracked)
+A-LLMRec/data/
+A-LLMRec/models/saved_models/
+A-LLMRec/recommendation_output.txt
+
+# Jupyter checkpoint sidecars
 .ipynb_checkpoints/
-*.ipynb
 
-# IDE and system files
+# Editors / OS
 .vscode/
 .idea/
+*.swp
+*~
 .DS_Store
 Thumbs.db
 
-# Keep tiny examples trackable
-!examples/tiny_sample/**
-
-# Keep directory placeholders
+# Placeholder files
 !.gitkeep

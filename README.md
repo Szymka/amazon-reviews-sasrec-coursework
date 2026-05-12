@@ -1,17 +1,6 @@
 # Amazon Reviews 2023 Recommendation System Coursework
 
-This repository is a team-oriented engineering scaffold for a recommendation-system coursework project based on Amazon Reviews 2023 5-Core data. The current experiment target is **SASRec-style sequential recommendation** implemented in PyTorch on three product categories.
-
-**Implementation Note**: This project follows the architectural ideas of the SASRec paper (Transformer + positional encoding + causal attention), but is completely independent in implementation details and technical stack:
-
-| Aspect            | Original SASRec (TensorFlow)        | This Implementation (PyTorch) |
-| ----------------- | ----------------------------------- | ----------------------------- |
-| Framework         | TensorFlow                          | PyTorch                       |
-| Loss Function     | BPR (Bayesian Personalized Ranking) | CrossEntropyLoss              |
-| Attention Mask    | TensorFlow-specific                 | PyTorch-native causal mask    |
-| Training Pipeline | Custom TF Estimator                 | PyTorch native training loop  |
-
-This is an **independent reimplementation**, not a fork or adaptation of the original SASRec codebase.
+This repository is a team-oriented engineering scaffold for a recommendation-system coursework project based on Amazon Reviews 2023 5-Core data.
 
 ---
 
@@ -26,6 +15,7 @@ This is an **independent reimplementation**, not a fork or adaptation of the ori
 - ✅ Evaluation metrics (NDCG@10, HitRate@10, etc.)
 - ✅ Configuration files for all categories (`configs/seqrec_*.yaml`)
 - ✅ Data loading and preprocessing pipeline
+- ✅ A-LLMRec codebase embedded (`A-LLMRec/`), Industrial data export, SASRec pretrain script, and NDCG@10 evaluation on coursework splits (`evaluation/eval_allmrec_sasrec_ndcg.py`)
 
 ### In Progress
 
@@ -51,7 +41,9 @@ This is an **independent reimplementation**, not a fork or adaptation of the ori
 .
 ├── README.md                 # This file
 ├── README_data.md            # Data documentation
-├── requirements.txt          # Python dependencies
+├── requirements.txt          # Python dependencies (coursework baseline)
+├── requirements-llmrec.txt  # Optional: A-LLMRec / conda env llmrec
+├── A-LLMRec/                 # Embedded A-LLMRec (KDD 2024) + coursework adapters
 ├── docs/                     # Documentation
 │   ├── DATA_DOWNLOAD.md
 │   ├── DATA_PREPROCESS.md
@@ -63,7 +55,9 @@ This is an **independent reimplementation**, not a fork or adaptation of the ori
 │   ├── download_amazon5core.py
 │   ├── check_raw_data.py
 │   ├── preprocess_to_seqrec.py
-│   └── check_processed_data.py
+│   ├── check_processed_data.py
+│   ├── prepare_allmrec_amazon_data.py  # Export processed data -> A-LLMRec data/amazon
+│   └── run_allmrec_industrial.py       # Prepare + SASRec train + NDCG@10 eval
 ├── models/                   # Model implementations
 │   └── seqrec/               # SeqRec model (SASRec-style)
 │       ├── model.py
@@ -73,12 +67,14 @@ This is an **independent reimplementation**, not a fork or adaptation of the ori
 │   └── train_seqrec.py
 ├── evaluation/               # Evaluation scripts
 │   ├── metrics.py
-│   └── evaluate_topk.py
+│   ├── evaluate_topk.py
+│   └── eval_allmrec_sasrec_ndcg.py  # NDCG@k for A-LLMRec SASRec on coursework splits
 ├── configs/                  # Configuration files
 │   ├── seqrec_industrial.yaml
 │   ├── seqrec_musical.yaml
 │   ├── seqrec_cds.yaml
-│   └── seqrec_tiny.yaml
+│   ├── seqrec_tiny.yaml
+│   └── allmrec_industrial.yaml  # A-LLMRec + Industrial pipeline reference
 ├── results/                  # Results (tables and figures)
 │   ├── tables/
 │   └── figures/
@@ -102,6 +98,11 @@ conda activate seqrec
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Optional: A-LLMRec stack in a separate env (see section "A-LLMRec")
+# conda create -n llmrec python=3.10 pip numpy tqdm pytz -y
+# conda activate llmrec
+# pip install -r requirements-llmrec.txt
 ```
 
 ### 2. Prepare Data
@@ -157,6 +158,49 @@ train/seqrec_{category}_test_results.json
 results/tables/seqrec_{category}_test_results.json
 ```
 
+### 6. A-LLMRec (optional, conda env `llmrec`)
+
+Use this path when training the **A-LLMRec** SASRec backbone on the same **Industrial_and_Scientific** interactions and reporting **NDCG@10** on the coursework **test.tsv** (same metric definition as `evaluation/metrics.py`; `topk` in `configs/seqrec_industrial.yaml` sets *k*).
+
+**Environment**
+
+```powershell
+conda create -n llmrec python=3.10 pip numpy tqdm pytz -y
+conda activate llmrec
+pip install -r requirements-llmrec.txt
+```
+
+**One-shot pipeline** (export `data/amazon/*`, train SASRec, evaluate test NDCG@10):
+
+```powershell
+conda activate llmrec
+python scripts/run_allmrec_industrial.py --num-epochs 50 --device cuda
+```
+
+**Step by step**
+
+```powershell
+conda activate llmrec
+python scripts/prepare_allmrec_amazon_data.py --category Industrial_and_Scientific
+cd A-LLMRec
+python train_sasrec_coursework.py --dataset Industrial_and_Scientific --num_epochs 50 --device cuda
+cd ..
+python evaluation/eval_allmrec_sasrec_ndcg.py --config configs/seqrec_industrial.yaml --checkpoint A-LLMRec/pre_train/sasrec/Industrial_and_Scientific/SASRec.epoch=50.lr=0.001.layer=2.head=2.hidden=128.maxlen=50.pth --split test --device cuda
+```
+
+Pipeline defaults and path references are summarized in `configs/allmrec_industrial.yaml` (**documentation / reference only** — training and eval still use `configs/seqrec_industrial.yaml` for data paths).
+
+**A-LLMRec stages 1–2 (LLM)** — after SASRec checkpoints exist, from `A-LLMRec/`:
+
+```powershell
+python main.py --pretrain_stage1 --rec_pre_trained_data Industrial_and_Scientific
+python main.py --pretrain_stage2 --rec_pre_trained_data Industrial_and_Scientific
+```
+
+Requires sufficient GPU memory and Hugging Face downloads; `bitsandbytes` may not install on Windows.
+
+**Note:** NDCG reported inside `train_sasrec_coursework.py` uses A-LLMRec’s leave-last split; **`eval_allmrec_sasrec_ndcg.py`** uses the coursework **train/dev/test** files — compare runs using the latter when aligning with `train/train_seqrec.py` results.
+
 ---
 
 ## 🎯 Model Training
@@ -190,16 +234,17 @@ Key hyperparameters in `configs/*.yaml`:
 | `num_epochs`          | Number of epochs             | 100     | 50, 100, 200        |
 | `early_stop_patience` | Early stopping patience      | 5       | 3, 5, 10            |
 | `seed`                | Random seed                  | 42      | 42, 123, 2024       |
+| `topk`                | Cutoff *k* for NDCG@k / HR@k | 10      | 10 (NDCG@10)        |
 
 ### Evaluation Metrics
 
-Training monitors the following metrics:
+Training monitors the following metrics (with *k* = `topk` from the config, default 10):
 
-- **NDCG@10** - Normalized Discounted Cumulative Gain (primary metric)
-- **HitRate@10** - Hit rate
-- **Recall@10** - Recall (same as HitRate@10 in single-target setting)
-- **MRR@10** - Mean Reciprocal Rank
-- **Precision@10** - Precision
+- **NDCG@*k*** - Normalized Discounted Cumulative Gain (primary metric when *k*=10: **NDCG@10**)
+- **HitRate@*k*** - Hit rate
+- **Recall@*k*** - Recall (same as HitRate@*k* in single-target setting)
+- **MRR@*k*** - Mean Reciprocal Rank
+- **Precision@*k*** - Precision
 
 ### Output Files
 
@@ -299,4 +344,4 @@ SASRec Paper:
 
 ---
 
-_Last Updated: May 9, 2026_
+_Last Updated: May 12, 2026_

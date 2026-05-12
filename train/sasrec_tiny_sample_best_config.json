@@ -1,0 +1,15 @@
+{
+  "category": "tiny_sample",
+  "epoch": 1,
+  "ndcg": 0.5654648794727952,
+  "hyperparameters": {
+    "maxlen": 10,
+    "hidden_units": 64,
+    "num_blocks": 2,
+    "num_heads": 2,
+    "dropout_rate": 0.2,
+    "learning_rate": 0.001,
+    "batch_size": 2,
+    "seed": 42
+  }
+}

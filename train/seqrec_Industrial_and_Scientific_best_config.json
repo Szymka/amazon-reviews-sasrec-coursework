@@ -1,0 +1,15 @@
+{
+  "model_class": "GRUSeqRec",
+  "category": "Industrial_and_Scientific",
+  "num_items": 25848,
+  "maxlen": 50,
+  "hidden_units": 128,
+  "gru_num_layers": 2,
+  "dropout_rate": 0.2,
+  "padding_id": 0,
+  "topk": 10,
+  "train_loss_mode": "sampled",
+  "num_sampled_negatives": 512,
+  "best_epoch": 2,
+  "best_dev_ndcg": 0.009795274065860176
+}

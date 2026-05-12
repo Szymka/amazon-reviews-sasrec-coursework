@@ -29,8 +29,15 @@ data/raw/**
 data/processed/**
 !data/processed/**/.gitkeep
 
-# RecBole export for LLMRank Rank (regenerate from processed/)
-data/recbole_llmrank/**
+# A-LLMRec / SASRec outputs
+models/saved_models/
+recommendation_output.txt
+
+# Prepared flat files for A-LLMRec (optional to version)
+!data/amazon/
+!data/amazon/.gitkeep
+!data/amazon/*.txt
+!data/amazon/*_text_name_dict.json.gz
 
 # Ship tiny fixtures with the repo
 !examples/tiny_sample/**
@@ -92,17 +99,10 @@ logs/
 **/*.log
 *.log
 
-# Regenerated JSON metric dumps from training scripts (optional: delete lines to version small reports)
-train/*_test_results.json
-evaluation/*_test_results.json
-
 # Empty layout only: add .gitkeep under results/ if you want the tree
 results/**
 !results/**/
 !results/**/.gitkeep
-
-# OpenAI / LLMRank Rank secrets (copy from configs/llmrank_recbole/openai_api.yaml.example)
-secrets/
 
 # Jupyter checkpoint sidecars
 .ipynb_checkpoints/
@@ -117,3 +117,9 @@ Thumbs.db
 
 # Placeholder files
 !.gitkeep
+
+# A-LLMRec text dict uses .json.gz suffix but is pickle; un-ignore after generic *.json.gz
+!data/amazon/*_text_name_dict.json.gz
+
+# SASRec checkpoints used by A-LLMRec RecSys loader
+!pre_train/sasrec/**/*.pth

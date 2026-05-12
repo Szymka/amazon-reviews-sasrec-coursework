@@ -1,6 +1,0 @@
-# Conda env "llmrec": training + evaluation for LLMRank backbone on coursework TSV.
-# conda create -n llmrec python=3.10 -y && conda activate llmrec && pip install -r requirements-llmrec.txt
-
-torch>=2.1,<2.9
-pandas>=2.0
-tqdm>=4.66

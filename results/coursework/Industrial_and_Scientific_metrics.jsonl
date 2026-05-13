@@ -1,3 +1,11 @@
-{"epoch": 1, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.22513137578028958, "valid_hr10": 0.3743, "test_ndcg10": 0.2166148099485468, "test_hr10": 0.3586}
-{"epoch": 2, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.23493880174658435, "valid_hr10": 0.3926, "test_ndcg10": 0.22699433497259752, "test_hr10": 0.3759}
-{"epoch": 3, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.2605039269721265, "valid_hr10": 0.4327, "test_ndcg10": 0.2504420778006874, "test_hr10": 0.4119}
+{"epoch": 1, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.22503100169350637, "valid_hr10": 0.3738, "test_ndcg10": 0.21723886751120144, "test_hr10": 0.3595}
+{"epoch": 5, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.29279391032193064, "valid_hr10": 0.4805, "test_ndcg10": 0.28338265315702715, "test_hr10": 0.4562}
+{"epoch": 10, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.32067596278180316, "valid_hr10": 0.5212, "test_ndcg10": 0.30561056633683137, "test_hr10": 0.495}
+{"epoch": 15, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.33144431868622626, "valid_hr10": 0.54, "test_ndcg10": 0.3186533850270924, "test_hr10": 0.5202}
+{"epoch": 20, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.33338016884587096, "valid_hr10": 0.5454, "test_ndcg10": 0.3180853870662969, "test_hr10": 0.5186}
+{"epoch": 25, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.3390338590668052, "valid_hr10": 0.5493, "test_ndcg10": 0.32153193906556016, "test_hr10": 0.5249}
+{"epoch": 30, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.34025822034506414, "valid_hr10": 0.5509, "test_ndcg10": 0.3204343901025495, "test_hr10": 0.5232}
+{"epoch": 35, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.34762587807271955, "valid_hr10": 0.5574, "test_ndcg10": 0.32442618608213947, "test_hr10": 0.5305}
+{"epoch": 40, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.34651155864813626, "valid_hr10": 0.5595, "test_ndcg10": 0.324434757056899, "test_hr10": 0.5338}
+{"epoch": 45, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.3490811626111648, "valid_hr10": 0.5628, "test_ndcg10": 0.32464186264189193, "test_hr10": 0.5314}
+{"epoch": 50, "dataset": "Industrial_and_Scientific", "valid_ndcg10": 0.3472008925817039, "valid_hr10": 0.5601, "test_ndcg10": 0.32670530336712655, "test_hr10": 0.535}

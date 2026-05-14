@@ -2,11 +2,11 @@
 
 本文档与 `scripts/preprocess_to_seqrec.py`、`pre_train/sasrec/` 中的 SASRec 实现一致，便于对照作业要求。
 
-## 数据来源与 5-Core
+## 数据来源与代码入口
 
-- 使用 **Amazon Reviews 官方 5-Core** 子集：每位用户、每个商品在子集中至少出现 **5** 次交互，缓解极端稀疏。
-- 工程内三类：**Industrial_and_Scientific**、**Musical_Instruments**、**CDs_and_Vinyl**。
-- 原始 gzip 分片放在 `data/raw/<类别>/`（`train` / `valid` / `test`），由 `scripts/preprocess_to_seqrec.py` 生成 `data/processed/<类别>/`。
+- `scripts/download_amazon5core.py` 的默认 URL 指向 Amazon Reviews 2023 `benchmark/5core/last_out_w_his/` 下的 `train` / `valid` / `test` gzip。
+- 代码默认三类：**Industrial_and_Scientific**、**Musical_Instruments**、**CDs_and_Vinyl**。
+- raw gzip 分片放在 `data/raw/<类别>/`，由 `scripts/preprocess_to_seqrec.py` 生成 `data/processed/<类别>/`。
 
 ## 用户序列与划分（长度 N）
 
@@ -22,7 +22,7 @@
 
 ## TSV 字段（`train.tsv` / `dev.tsv` / `test.tsv`）
 
-与官方导出及作业描述对齐的语义如下（列名以仓库实际文件为准）：
+`scripts/preprocess_to_seqrec.py` 写出的列如下：
 
 | 列名 | 含义 |
 |------|------|
@@ -35,7 +35,7 @@
 | `raw_parent_asin` | 原始商品 ID（可关联 Item Metadata） |
 
 - **验证 / 测试文件**中每一行：在给定 `history`（及 `seq_ids`）条件下，预测 `target_id` / `raw_parent_asin`。
-- `dev.tsv` 对应官方 **valid** 分片；`test.tsv` 对应 **test** 分片。
+- `dev.tsv` 由 raw `valid` 分片生成；`test.tsv` 由 raw `test` 分片生成。
 
 ## `sasrec_interactions.txt` 与 `data/amazon/*.txt`
 
@@ -63,6 +63,7 @@
    `python scripts/preprocess_to_seqrec.py --categories Industrial_and_Scientific Musical_Instruments CDs_and_Vinyl --overwrite`
 
 3. **生成 SASRec / A-LLMRec 共用的扁平交互**  
+   若已有 `data/amazon/<类别>.txt` 可跳过；若只有 `data/processed/<类别>/`，执行：  
    `python scripts/prepare_allmrec_amazon.py --overwrite`
 
 4. **单类别训练 + 记录指标**  
@@ -84,6 +85,7 @@
 
 ## 延伸阅读（给写报告、做实验的同学）
 
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)**：当前项目状态、已有/缺失数据、代码入口关系和复现实验入口。  
 - **[EXPERIMENT_GUIDE.md](EXPERIMENT_GUIDE.md)**：实验前检查清单、一键命令、参数表、`metrics` 各字段、报告章节提示、常见问题。  
 - **[README.md](../README.md)**：仓库入口、最短上手、脚本索引。
 

@@ -1,3 +1,14 @@
-{"epoch": 1, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.23695916704271622, "valid_hr10": 0.4095, "test_ndcg10": 0.22549200017210055, "test_hr10": 0.3948}
-{"epoch": 2, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.2619460354221328, "valid_hr10": 0.4409, "test_ndcg10": 0.24993562889377882, "test_hr10": 0.4235}
-{"epoch": 3, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.30301838868095526, "valid_hr10": 0.4941, "test_ndcg10": 0.2975229146680836, "test_hr10": 0.4816}
+{"epoch": 1, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.23606900856472238, "valid_hr10": 0.4102, "test_ndcg10": 0.2289581197900809, "test_hr10": 0.399}
+{"epoch": 5, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.3617753123818752, "valid_hr10": 0.572, "test_ndcg10": 0.35585599145592817, "test_hr10": 0.561}
+{"epoch": 10, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.4330516655931695, "valid_hr10": 0.6517, "test_ndcg10": 0.42928859999109126, "test_hr10": 0.6526}
+{"epoch": 1, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.23374357084801245, "valid_hr10": 0.4037, "test_ndcg10": 0.22836205141843807, "test_hr10": 0.3948}
+{"epoch": 5, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.35522730833085053, "valid_hr10": 0.5658, "test_ndcg10": 0.34582841571589834, "test_hr10": 0.5524}
+{"epoch": 10, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.42569092209570836, "valid_hr10": 0.6417, "test_ndcg10": 0.41762554282878916, "test_hr10": 0.6378}
+{"epoch": 15, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.4621364604988269, "valid_hr10": 0.6819, "test_ndcg10": 0.45074313023852935, "test_hr10": 0.6737}
+{"epoch": 20, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.4811580382202034, "valid_hr10": 0.7049, "test_ndcg10": 0.4699266080685905, "test_hr10": 0.6918}
+{"epoch": 25, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.4920895563718225, "valid_hr10": 0.715, "test_ndcg10": 0.4803276873439252, "test_hr10": 0.7026}
+{"epoch": 30, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.49852151523802796, "valid_hr10": 0.7226, "test_ndcg10": 0.4876716856140565, "test_hr10": 0.7073}
+{"epoch": 35, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.5024586396829973, "valid_hr10": 0.7263, "test_ndcg10": 0.4936195359613811, "test_hr10": 0.7177}
+{"epoch": 40, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.5095056546449862, "valid_hr10": 0.7301, "test_ndcg10": 0.4976242564956225, "test_hr10": 0.7156}
+{"epoch": 45, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.5137832410084724, "valid_hr10": 0.7301, "test_ndcg10": 0.5043039608721094, "test_hr10": 0.7243}
+{"epoch": 50, "dataset": "CDs_and_Vinyl", "valid_ndcg10": 0.5183648017741218, "valid_hr10": 0.7355, "test_ndcg10": 0.5051799642118184, "test_hr10": 0.7248}

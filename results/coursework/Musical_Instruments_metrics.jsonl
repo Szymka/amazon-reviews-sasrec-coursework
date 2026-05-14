@@ -1,3 +1,11 @@
-{"epoch": 1, "dataset": "Musical_Instruments", "valid_ndcg10": 0.2918853593949738, "valid_hr10": 0.4639, "test_ndcg10": 0.26987888149703265, "test_hr10": 0.4364}
-{"epoch": 2, "dataset": "Musical_Instruments", "valid_ndcg10": 0.29884026534899943, "valid_hr10": 0.4751, "test_ndcg10": 0.27634587374010555, "test_hr10": 0.449}
-{"epoch": 3, "dataset": "Musical_Instruments", "valid_ndcg10": 0.3105235705691888, "valid_hr10": 0.4946, "test_ndcg10": 0.2871078679489103, "test_hr10": 0.4634}
+{"epoch": 1, "dataset": "Musical_Instruments", "valid_ndcg10": 0.2914033978161451, "valid_hr10": 0.464, "test_ndcg10": 0.2692877733627367, "test_hr10": 0.4388}
+{"epoch": 5, "dataset": "Musical_Instruments", "valid_ndcg10": 0.3411089256188612, "valid_hr10": 0.5326, "test_ndcg10": 0.31547773970192067, "test_hr10": 0.5037}
+{"epoch": 10, "dataset": "Musical_Instruments", "valid_ndcg10": 0.3682772220281591, "valid_hr10": 0.5705, "test_ndcg10": 0.34161273529654457, "test_hr10": 0.5412}
+{"epoch": 15, "dataset": "Musical_Instruments", "valid_ndcg10": 0.38176104605713357, "valid_hr10": 0.582, "test_ndcg10": 0.3527907474005158, "test_hr10": 0.5551}
+{"epoch": 20, "dataset": "Musical_Instruments", "valid_ndcg10": 0.3926118667799522, "valid_hr10": 0.6003, "test_ndcg10": 0.3623135490633246, "test_hr10": 0.5707}
+{"epoch": 25, "dataset": "Musical_Instruments", "valid_ndcg10": 0.3986887654796749, "valid_hr10": 0.6118, "test_ndcg10": 0.3661821393224464, "test_hr10": 0.5735}
+{"epoch": 30, "dataset": "Musical_Instruments", "valid_ndcg10": 0.40044676278775043, "valid_hr10": 0.6146, "test_ndcg10": 0.3681261779776007, "test_hr10": 0.5823}
+{"epoch": 35, "dataset": "Musical_Instruments", "valid_ndcg10": 0.4017465927652247, "valid_hr10": 0.6221, "test_ndcg10": 0.37220624576636385, "test_hr10": 0.5881}
+{"epoch": 40, "dataset": "Musical_Instruments", "valid_ndcg10": 0.40380249090671766, "valid_hr10": 0.6239, "test_ndcg10": 0.3724397457921468, "test_hr10": 0.5877}
+{"epoch": 45, "dataset": "Musical_Instruments", "valid_ndcg10": 0.40536083815499435, "valid_hr10": 0.6242, "test_ndcg10": 0.37270217852698484, "test_hr10": 0.5905}
+{"epoch": 50, "dataset": "Musical_Instruments", "valid_ndcg10": 0.40623204716514777, "valid_hr10": 0.6261, "test_ndcg10": 0.372309013594464, "test_hr10": 0.5892}

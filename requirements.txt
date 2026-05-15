@@ -15,3 +15,6 @@ pandas
 
 # 评估结果可视化（三类别批跑 / plot_coursework_metrics.py）
 matplotlib>=3.7.0
+
+# 用于绘制注意力热力图
+seaborn>=0.12.0
